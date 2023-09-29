@@ -7,7 +7,7 @@ from app.config import settings
 
 # Construct the database URL based on your configuration
 # db_url = f"mysql+mysqlconnector://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}/{settings.DB_NAME}"
-sql_url = "mysql+mysqlconnector://root:Falca_123@localhost/news_input"
+sql_url = "mysql+mysqlconnector://root:Falca_123@localhost/sniper"
 
 # Create the database engine
 engine = create_engine(sql_url)
