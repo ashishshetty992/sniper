@@ -1,17 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import crud, models, security, schemas
-from app.schemas import Agent
-from app.database import get_db
+from app.crud.agent import create_agent as crud_create_agent
+from app.crud.agent import get_agent as crud_get_agent
+from app.crud.agent import get_agents as crud_get_agents
+from app.schemas.agent import AgentCreate
+from app.models.response import AgentResponseModel
+from app import dependencies
+from typing import List
+import pdb
 
 router = APIRouter()
 
-# Route for creating a new agent
-@router.post("/", response_model=Agent)
-def create_agent(agent: schemas.AgentCreate, db: Session = Depends(get_db), current_user: models.Admin = Depends(security.get_current_user)):
-    return crud.create_agent(db, agent)
+@router.post("/agents/", response_model=AgentResponseModel)
+def create_agent(agent: AgentCreate, db: Session = Depends(dependencies.get_db)):
+    return crud_create_agent(db, agent)
 
-# Route for getting an agent by ID
-@router.get("/{agent_id}", response_model=Agent)
-def read_agent(agent_id: int, db: Session = Depends(get_db), current_user: models.Admin = Depends(security.get_current_user)):
-    return crud.get_agent(db, agent_id)
+@router.get("/agents/{agent_id}", response_model=AgentResponseModel)
+def read_agent(agent_id: int, db: Session = Depends(dependencies.get_db)):
+    agent = crud_get_agent(db, agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return agent
+
+@router.get("/agents/", response_model=List[AgentResponseModel])
+def read_agents(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
+    agents = crud_get_agents(db, skip, limit)
+    return agents
