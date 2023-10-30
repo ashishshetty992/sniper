@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, engine
 from app.schemas import role as role_schemas
+from app.schemas.response import RoleResponseSchema
 from app.crud import role as role_crud
 from app.models import role as role_models
 import pdb
 from app.dependencies import get_db  # Import the get_db function
+from typing import List
 
 
 router = APIRouter()
@@ -23,12 +25,18 @@ def get_role(role_id: int, db: Session = Depends(get_db)):
 def create_role(role: role_schemas.RoleCreate, db: Session = Depends(get_db)):
     return role_crud.create_role(db, role)
 
-
 # Get role by role_id
 @router.get("/roles/{role_id}", response_model=role_schemas.Role)
 def read_role(role_id: int, db: Session = Depends(get_db)):
     role = get_role(role_id, db)
     return role
+
+@router.get("/roles/", response_model=List[RoleResponseSchema])
+def get_roles(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, ):
+    roles = role_crud.get_roles(db)
+    return roles
+
+
 
 # # Update role by role_id
 # @router.put("/roles/{role_id}", response_model=role_schemas.Role)

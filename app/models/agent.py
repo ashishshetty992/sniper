@@ -18,4 +18,4 @@ class Agent(Base):
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     
     # Add a reference to the AgentProfiles that reference this agent
-    profiles = relationship("AgentProfile", secondary="agent_profile_association")
+    profiles = relationship("AgentProfile", secondary="agent_profile_association", back_populates="agents")

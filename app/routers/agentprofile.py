@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.crud.agentprofile import create_agent_profile as crud_create_agent_profile
 from app.crud.agentprofile import get_agent_profile as crud_get_agent_profile
 from app.crud.agentprofile import get_agent_profiles as crud_get_agent_profiles
+from app.crud.agentprofile import get_profiles_with_agents as crud_get_profiles_with_agents
 from app.schemas.agentprofile import AgentProfileCreate
 from app.models.response import AgentProfileResponseModel
 from app import dependencies
@@ -24,4 +25,9 @@ def read_agent_profile(agent_profile_id: int, db: Session = Depends(dependencies
 @router.get("/agentprofiles/", response_model=List[AgentProfileResponseModel])
 def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     agent_profiles = crud_get_agent_profiles(db, skip, limit)
+    return agent_profiles
+
+@router.get("/allprofilesagent/")
+def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
+    agent_profiles = crud_get_profiles_with_agents(db, skip, limit)
     return agent_profiles

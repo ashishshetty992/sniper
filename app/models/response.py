@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+
 
 class RoleResponse(BaseModel):
     id: int
@@ -22,6 +23,7 @@ class AgentProfileResponseModel(BaseModel):
 class AgentResponseModel(BaseModel):
     id: int
     name: str
+    ip_address: str
 
 class RuleResponseModel(BaseModel):
     id: int

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.crud.rule import create_rule as crud_create_rule
 from app.crud.rule import get_rule as crud_get_rule
 from app.crud.rule import get_rules as crud_get_rules
+from app.crud.rule import get_rules_with_agents_and_profile as crud_get_rules_with_agents_and_profile
 from app.schemas.rule import RuleCreate
 from app.models.response import RuleResponseModel
 from app import dependencies
@@ -24,4 +25,9 @@ def read_rule(rule_id: int, db: Session = Depends(dependencies.get_db)):
 @router.get("/rules/", response_model=List[RuleResponseModel])
 def read_rules(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     rules = crud_get_rules(db, skip, limit)
+    return rules
+
+@router.get("/get_rules_with_agents_and_profile/")
+def read_rules(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
+    rules = crud_get_rules_with_agents_and_profile(db, skip, limit)
     return rules

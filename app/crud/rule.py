@@ -5,6 +5,7 @@ from typing import List
 from app.models.agent import Agent
 from app.models.agentprofile import AgentProfile
 import pdb
+from sqlalchemy.orm import joinedload
 
 def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int]):
     db_rule = Rule(**rule.dict())
@@ -26,3 +27,16 @@ def get_rule(db: Session, rule_id: int):
 
 def get_rules(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Rule).offset(skip).limit(limit).all()
+
+
+def get_rules_with_agents_and_profile(db: Session, skip: int = 0, limit: int = 10):
+    # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
+    rules = (
+        db.query(Rule)
+        .options(joinedload(Rule.agents))  # Use joinedload to eagerly load agent profiles
+        .options(joinedload(Rule.agent_profiles))  # Use joinedload to eagerly load agent profiles
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return rules
