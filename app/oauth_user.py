@@ -14,7 +14,6 @@ from jose import JWTError, jwt
 from app.models.token import TokenData
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi import Depends, HTTPException, status
-from jose import JWTError, jwt
 
 import pdb
 

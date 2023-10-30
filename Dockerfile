@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port on which the FastAPI server will run (if needed)
-EXPOSE 8082
+EXPOSE 9001
 
 # Default environment to "DEVELOPMENT" during the build process
 ARG ENV=DEVELOPMENT
