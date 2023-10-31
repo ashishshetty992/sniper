@@ -11,18 +11,18 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/agentprofiles/", response_model=AgentProfileResponseModel)
+@router.post("/agentprofiles/")
 def create_agent_profile(agent_profile: AgentProfileCreate, agent_ids: List[int], db: Session = Depends(dependencies.get_db)):
     return crud_create_agent_profile(db, agent_profile, agent_ids)
 
-@router.get("/agentprofiles/{agent_profile_id}", response_model=AgentProfileResponseModel)
+@router.get("/agentprofiles/{agent_profile_id}")
 def read_agent_profile(agent_profile_id: int, db: Session = Depends(dependencies.get_db)):
     agent_profile = crud_get_agent_profile(db, agent_profile_id)
     if agent_profile is None:
         raise HTTPException(status_code=404, detail="Agent Profile not found")
     return agent_profile
 
-@router.get("/agentprofiles/", response_model=List[AgentProfileResponseModel])
+@router.get("/agentprofiles/")
 def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     agent_profiles = crud_get_agent_profiles(db, skip, limit)
     return agent_profiles

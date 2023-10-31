@@ -25,7 +25,7 @@ def get_roles(db: Session, role_ids: Role):
     roles = get_roles_by_ids(db, role_ids)
     return roles
 
-@router.post("/users/", response_model=UserResponseSchema, response_model_exclude_none=True)
+@router.post("/users/")
 def create_user(user: UserCreate, role_ids: List[int], db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     current_user_details = get_current_user_details(db, current_user.username)
     current_user_roles = current_user_details.roles

@@ -21,17 +21,17 @@ def get_role(role_id: int, db: Session = Depends(get_db)):
     return role
 
 # Create a new role
-@router.post("/roles/", response_model=role_schemas.Role)
+@router.post("/roles/")
 def create_role(role: role_schemas.RoleCreate, db: Session = Depends(get_db)):
     return role_crud.create_role(db, role)
 
 # Get role by role_id
-@router.get("/roles/{role_id}", response_model=role_schemas.Role)
+@router.get("/roles/{role_id}")
 def read_role(role_id: int, db: Session = Depends(get_db)):
     role = get_role(role_id, db)
     return role
 
-@router.get("/roles/", response_model=List[RoleResponseSchema])
+@router.get("/roles/")
 def get_roles(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, ):
     roles = role_crud.get_roles(db)
     return roles

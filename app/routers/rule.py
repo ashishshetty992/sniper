@@ -11,18 +11,18 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/rules/", response_model=RuleResponseModel)
+@router.post("/rules/")
 def create_rule(rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], db: Session = Depends(dependencies.get_db)):
     return crud_create_rule(db, rule, agent_ids, agent_profile_ids)
 
-@router.get("/rules/{rule_id}", response_model=RuleResponseModel)
+@router.get("/rules/{rule_id}")
 def read_rule(rule_id: int, db: Session = Depends(dependencies.get_db)):
     rule = crud_get_rule(db, rule_id)
     if rule is None:
         raise HTTPException(status_code=404, detail="Rule not found")
     return rule
 
-@router.get("/rules/", response_model=List[RuleResponseModel])
+@router.get("/rules/")
 def read_rules(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     rules = crud_get_rules(db, skip, limit)
     return rules

@@ -12,18 +12,18 @@ import pdb
 
 router = APIRouter()
 
-@router.post("/agents/", response_model=AgentResponseModel)
+@router.post("/agents/")
 def create_agent(agent: AgentCreate, db: Session = Depends(dependencies.get_db)):
     return crud_create_agent(db, agent)
 
-@router.get("/agents/{agent_id}", response_model=AgentResponseModel)
+@router.get("/agents/{agent_id}")
 def read_agent(agent_id: int, db: Session = Depends(dependencies.get_db)):
     agent = crud_get_agent(db, agent_id)
     if agent is None:
         raise HTTPException(status_code=404, detail="Agent not found")
     return agent
 
-@router.get("/agents/", response_model=List[AgentResponseModel])
+@router.get("/agents/")
 def read_agents(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     agents = crud_get_agents(db, skip, limit)
     return agents
