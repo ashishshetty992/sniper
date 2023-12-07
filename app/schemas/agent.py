@@ -5,6 +5,7 @@ from datetime import datetime
 class AgentBase(BaseModel):
     name: str
     ip_address: str
+    password: str
     active: bool
 
 class AgentCreate(AgentBase):

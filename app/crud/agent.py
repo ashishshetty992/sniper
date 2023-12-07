@@ -2,9 +2,14 @@ from sqlalchemy.orm import Session
 from app.models.agent import Agent
 from app.schemas.agent import AgentCreate
 from sqlalchemy.orm import joinedload
+from app.helpers.ssh_helper import make_ssh_connection
 import pdb
 
 def create_agent(db: Session, agent: AgentCreate):
+    # creat ssh connection and then save only if it succeeds
+    make_ssh_connection(agent.ip_address, agent.name, agent.password)
+    del agent.password
+    print("-------- after ssh connection -------")
     db_agent = Agent(**agent.dict())
     db.add(db_agent)
     db.commit()
