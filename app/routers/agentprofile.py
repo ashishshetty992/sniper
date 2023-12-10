@@ -31,3 +31,11 @@ def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(de
 def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     agent_profiles = crud_get_profiles_with_agents(db, skip, limit)
     return agent_profiles
+
+@router.post("/schedule/{agent_profile_id}/rule-run")
+async def schedule_rule_run(agent_profile_id, time, date, frequency):
+    start_date:str = agent_profile_id
+    time:object = time
+    frequency:str = frequency
+    # schedule_rule_run(agent_profile_id, time, date, frequency):\
+    return {"result":"succesfully scheduled rules"}

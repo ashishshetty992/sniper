@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import user, role, oauth, agentprofile, agent, rule
+from app.routers import schedule, user, role, oauth, agentprofile, agent, rule
 from app.database import engine, Base
 
 app = FastAPI()
@@ -27,6 +27,7 @@ app.include_router(agent.router)
 app.include_router(agentprofile.router)
 app.include_router(rule.router)
 app.include_router(oauth.router)
+app.include_router(schedule.router)
 
 # Create tables in the database
 Base.metadata.create_all(bind=engine)
