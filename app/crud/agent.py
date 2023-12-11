@@ -33,6 +33,13 @@ def get_agents_with_profiles(db: Session, skip: int = 0, limit: int = 10):
     )
     return agents
 
+def get_rules_by_agent(db: Session, agent_id: int):
+    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    rules = agent.rules
+    return agent
+
+
+
 def get_agents_by_profile(db: Session, agent_profile_id:int):
     agents = (
         db.query(Agent).filter(Agent.profiles == agent_profile_id).all()

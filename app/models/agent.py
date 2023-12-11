@@ -19,3 +19,5 @@ class Agent(Base):
     
     # Add a reference to the AgentProfiles that reference this agent
     profiles = relationship("AgentProfile", secondary="agent_profile_association", back_populates="agents")
+    rules = relationship("Rule", secondary="rule_agent_association", back_populates="agents")
+

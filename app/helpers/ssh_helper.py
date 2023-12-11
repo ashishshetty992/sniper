@@ -5,7 +5,7 @@ import paramiko
 import stat
 import pdb
 
-from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME
+from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH
 
 
 def make_ssh_connection(hostname,username, password=None, port=22):
@@ -30,7 +30,7 @@ def make_ssh_connection(hostname,username, password=None, port=22):
         sftp_client = ssh_client.open_sftp()
         
         #copy public key to remote server
-        copy_file_content_to_remote_server(sftp_client, "/users/lt/.ssh/id_rsa.pub", "administrators_authorized_keys", "C:\ProgramData\ssh")
+        copy_file_content_to_remote_server(sftp_client, PUBLIC_KEY_FILE_PATH, "administrators_authorized_keys", "C:\ProgramData\ssh")
         
         #command to give certain permission and restriction for authorized keys
         #TO DO fetch the path without hardoding
@@ -68,7 +68,7 @@ def connect_to_agent(hostname,username, password=None, port=22, pkey=None, ssh_c
         if (not ssh_client):
             ssh_client = paramiko.SSHClient()
         if (not pkey):
-            pkey = paramiko.RSAKey.from_private_key_file("/users/lt/.ssh/id_rsa")
+            pkey = paramiko.RSAKey.from_private_key_file(PRIVATE_KEY_FILE_PATH)
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if password:
             print(f"authenticating using passowrd")
@@ -183,6 +183,7 @@ def generate_ssh_key_pairs():
 
 
 def search_file_extension_in_remote(hostname, username, extension, remote_path="C:"):
+    print(hostname, username, extension, remote_path)
     ssh_client = connect_to_agent(hostname, username)
     
     print(f"searching files with {extension} extension ....")

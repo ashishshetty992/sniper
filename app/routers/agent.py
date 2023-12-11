@@ -4,6 +4,7 @@ from app.crud.agent import create_agent as crud_create_agent
 from app.crud.agent import get_agent as crud_get_agent
 from app.crud.agent import get_agents as crud_get_agents
 from app.crud.agent import get_agents_with_profiles as crud_get_agents_with_profiles
+from app.crud.agent import get_rules_by_agent as crud_get_rules_by_agent
 from app.schemas.agent import AgentCreate
 from app.helpers import ssh_helper
 from app import dependencies
@@ -34,6 +35,19 @@ def read_agents(skip: int = 0, limit: int = 10, db: Session = Depends(dependenci
 def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db)):
     agent_profiles = crud_get_agents_with_profiles(db, skip, limit)
     return agent_profiles
+
+@router.get("/rules_by_agent/{agent_id}/")
+def read_rules_by_agent(agent_id: int, db: Session = Depends(dependencies.get_db)):
+    rules = crud_get_rules_by_agent(db, agent_id)
+    return rules
+
+# @router.get("/agents/{agent_id}/rules/")
+# def read_rules_by_agent(agent_id: int, db: Session = Depends(dependencies.get_db)):
+#     rules = crud_get_rules_by_agent(db, agent_id)
+#     return rules
+
+# @router.get("/agents/{agent_id}/rules/{rule_id}/")
+
 
 
 @router.post("/heartbeatcheck/")

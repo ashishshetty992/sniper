@@ -43,7 +43,5 @@ def get_rules_with_agents_and_profile(db: Session, skip: int = 0, limit: int = 1
 
 def get_rules_for_agent(db: Session, agent_id:int):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
-    rules = (
-        db.query(Rule).join(Agent).filter(Rule.agents.has(agent_id)).all()
-    )
-    return rules
+
+       return db.query(Rule).filter(Agent.id == agent_id)

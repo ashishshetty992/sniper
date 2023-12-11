@@ -18,4 +18,4 @@ class Rule(Base):
     
     # Add a reference to the AgentProfiles that reference this rule
     agent_profiles = relationship("AgentProfile", secondary="rule_profile_association")
-    agents = relationship("Agent", secondary="rule_agent_association")
+    agents = relationship("Agent", secondary="rule_agent_association", back_populates="rules")

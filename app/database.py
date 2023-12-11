@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "mysql+mysqlconnector://sniper:password@192.168.0.104/sniper"
+DATABASE_URL = "mysql+mysqlconnector://root:Falca_123@localhost/sniper_new"
 
 
 

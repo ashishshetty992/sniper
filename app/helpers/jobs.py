@@ -1,24 +1,30 @@
-from io import StringIO
-import pdb
+from app.crud.schedule import create_schedule
+from app.schemas.schedule import ScheduleCreate
 from apscheduler.schedulers.background import BackgroundScheduler
 import paramiko
-from app import dependencies
-from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME
-from app.crud.agent import get_agent, get_agents, get_agents_by_profile
+from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
+from app.crud.agent import get_agents_by_profile, get_rules_by_agent
 
 from apscheduler.triggers.cron import CronTrigger
-from app.crud.rule import get_rules_for_agent
 from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, search_file_extension_in_remote
 from app.models.agent import Agent
 from fastapi import  Depends
 import shutil
 from app.enums import References
 from sqlalchemy.orm import Session
+from app.models.schedule import Schedule
+from datetime import datetime
+
+import pdb
 
 from app.models.rule import Rule
 
 
 scheduler = BackgroundScheduler()
+#TODO add it entry point
+print("scheduler started")
+scheduler.start()
+
 
 def ssh_key_generation_job_scheduler(start_date:str, time:list, frequency=None):
     """
@@ -70,41 +76,39 @@ def ssh_key_generation_job():
         
         print("replacing old ssh key with new ssh private key")   
         # replace server private key with the new key generated
-        shutil.copyfile("/users/lt/.ssh/id_rsa", "/users/lt/.ssh/id_rsa_old")
-        shutil.copyfile("/users/lt/.ssh/id_rsa.pub", "/users/lt/.ssh/id_rsa_old.pub")
-        shutil.copyfile(PRIVATE_KEY_FILE_NAME, "/users/lt/.ssh/id_rsa")
-        shutil.copyfile(PUBLIC_KEY_FILE_NAME, "/users/lt/.ssh/id_rsa.pub")
+        shutil.copyfile(PRIVATE_KEY_FILE_PATH, SSH_DIRECTORY+'/id_rsa_old')
+        shutil.copyfile(PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY+'/id_rsa_old.pub')
+        shutil.copyfile(PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH)
+        shutil.copyfile(PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH)
 
 
-def rule_run_scheduler(start_date:str, time:list, reference:str, reference_id:int, db:Session, frequency=None):
+def rule_run_scheduler(schedule:Schedule, db:Session):
     print("scheduling rule run job")
-    trigger =  CronTrigger(hour=time[0], minute=time[1], second=0, start_date=start_date, day='*')# every day
-    # pdb.set_trace()
-    if (frequency == "week"):
-        trigger = CronTrigger(hour=time[0], minute=time[1], second=0, start_date=start_date, day_of_week=0)
-    elif (frequency == "month"):
-        trigger = CronTrigger(hour=time[0], minute=time[1], second=0, start_date=start_date, day=1)
+    # Create a CronTrigger for every 10 seconds after 7:30 PM, starting today
+    trigger = CronTrigger(minute="*/3", start_date="2023-12-10")
+
+    if (schedule.frequency == "week"):
+        trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, second=0, start_date=schedule.start_date, day_of_week=0)
+    elif (schedule.frequency == "month"):
+        trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, second=0, start_date=schedule.start_date, day=1)
     
-    # pdb.set_trace()
     # fetch the reference and all the rules associated
-    if (reference == References.AGENT.value):
-        schedule_rules_for_agent(db, reference_id, trigger)
-    elif (reference == References.AGENTPROFILE.value):
+    if (schedule.reference == References.AGENT.value):
+        schedule_rules_for_agent(db, schedule.reference_id, trigger)
+        print("scheduled rule run for the agent")
+    elif (schedule.reference == References.AGENTPROFILE.value):
         # fetch all agents under the agentprofile
-        agents:list[Agent] = get_agents_by_profile(db, reference_id)
-        for agent in agents:
-            schedule_rules_for_agent(db, agent.id, trigger)
+        # agents:list[Agent] = get_agents_by_profile(db, reference_id)
+        # for agent in agents:
+        #     schedule_rules_for_agent(db, agent.id, trigger)
+        print("scheduled rule run for the agent profile")
     else:
         raise Exception("Unknown reference")
 
 
 def schedule_rules_for_agent(db:Session, agent_id:int, trigger:CronTrigger):
-    agent:Agent = get_agent(db, agent_id)
-    rules:list[Rule] = get_rules_for_agent(db, agent.id)
-    for rule in rules:
-        #TODO add appropriate rule logic in code
-        scheduler.add_job(search_file_extension_in_remote, trigger, [agent.ip_address, agent.name, "xlsx"])
+    agent = get_rules_by_agent(db, agent_id)
+    scheduler.add_job(search_file_extension_in_remote, trigger, [agent.ip_address, agent.name, "xlsx"])
 
-      
-#TODO add it entry point
-scheduler.start()
+    # for rule in agent.rules:
+    #     #TODO add appropriate rule logic in code

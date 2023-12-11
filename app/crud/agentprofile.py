@@ -22,6 +22,10 @@ def get_agent_profile(db: Session, agent_profile_id: int):
 def get_agent_profiles(db: Session, skip: int = 0, limit: int = 10):
     return db.query(AgentProfile).offset(skip).limit(limit).all()
 
+def get_rules_by_agentprofile(db: Session, agent_profile_id: int):
+    agent_profile = db.query(AgentProfile).filter(AgentProfile.id == agent_profile_id).first()
+    rules = agent_profile.rules
+    return rules
 
 def get_profiles_with_agents(db: Session, skip: int = 0, limit: int = 10):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
@@ -33,3 +37,14 @@ def get_profiles_with_agents(db: Session, skip: int = 0, limit: int = 10):
         .all()
     )
     return profile
+
+def get_agents_by_profile_id(db: Session, profile_id: int):
+    # Query the AgentProfile model based on the given profile_id
+    agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).first()
+
+    if agent_profile:
+        # Access the 'agents' attribute to get the agents associated with the agent profile
+        agents = agent_profile.agents
+        return agents
+
+    return None

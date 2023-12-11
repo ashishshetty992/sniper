@@ -11,12 +11,11 @@ class Schedule(Base):
     __tablename__ = "schedules"
 
     id = Column(Integer, primary_key=True, index=True)
-    time = Column(String(255))
+    hour = Column(Integer)
+    minutes = Column(Integer)
     start_date = Column(String(255))
     frequency = Column(String(255))
+    reference = Column(String(255))
+    reference_id = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
-    
-    # Add a reference to the AgentProfiles that reference this rule
-    agent_profiles = relationship("AgentProfile", secondary="rule_profile_association")
-    agents = relationship("Agent", secondary="rule_agent_association")

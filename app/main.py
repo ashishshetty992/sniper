@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # "*" means all origins are allowed. You can replace it with a specific origin like "http://localhost:8000" if needed.
 origins = ["*"]
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
