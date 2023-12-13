@@ -8,7 +8,6 @@ from app.crud.agentprofile import get_rules_by_agentprofile as crud_get_rules_by
 from app.crud.agentprofile import get_agents_by_profile_id as crud_get_agents_by_profile_id
 # from app.crud.agent import get_agents_by_profile as crud_get_agents_by_profile
 from app.schemas.agentprofile import AgentProfileCreate
-from app.models.response import AgentProfileResponseModel
 from app import dependencies
 from typing import List
 

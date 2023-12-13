@@ -35,6 +35,7 @@ def get_agents_with_profiles(db: Session, skip: int = 0, limit: int = 10):
 
 def get_rules_by_agent(db: Session, agent_id: int):
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    if(not agent): raise Exception(f"Agent not present for the id : {agent_id}")
     rules = agent.rules
     return agent
 

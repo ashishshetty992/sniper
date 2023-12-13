@@ -18,6 +18,7 @@ from datetime import datetime
 import pdb
 
 from app.models.rule import Rule
+from app.crud.agentprofile import get_agents_by_profile_id
 
 
 scheduler = BackgroundScheduler()
@@ -84,8 +85,8 @@ def ssh_key_generation_job():
 
 def rule_run_scheduler(schedule:Schedule, db:Session):
     print("scheduling rule run job")
-    # Create a CronTrigger for every 10 seconds after 7:30 PM, starting today
-    trigger = CronTrigger(minute="*/3", start_date="2023-12-10")
+
+    trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, start_date=schedule.start_date)
 
     if (schedule.frequency == "week"):
         trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, second=0, start_date=schedule.start_date, day_of_week=0)
@@ -94,20 +95,21 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
     
     # fetch the reference and all the rules associated
     if (schedule.reference == References.AGENT.value):
-        schedule_rules_for_agent(db, schedule.reference_id, trigger)
+        agent = get_rules_by_agent(db, schedule.reference_id)
+        schedule_rules_for_agent(db, agent, trigger)
         print("scheduled rule run for the agent")
     elif (schedule.reference == References.AGENTPROFILE.value):
-        # fetch all agents under the agentprofile
-        # agents:list[Agent] = get_agents_by_profile(db, reference_id)
-        # for agent in agents:
-        #     schedule_rules_for_agent(db, agent.id, trigger)
+        agents:list[Agent] = get_agents_by_profile_id(db, schedule.reference_id)
+        for agent in agents:
+            schedule_rules_for_agent(db, agent, trigger)
         print("scheduled rule run for the agent profile")
     else:
         raise Exception("Unknown reference")
 
 
-def schedule_rules_for_agent(db:Session, agent_id:int, trigger:CronTrigger):
-    agent = get_rules_by_agent(db, agent_id)
+def schedule_rules_for_agent(db:Session, agent:int, trigger:CronTrigger):
+    # for rule in agent.rules:
+        # scheduler.add_job(rule, trigger, [agent.ip_address, agent.name, "xlsx"])
     scheduler.add_job(search_file_extension_in_remote, trigger, [agent.ip_address, agent.name, "xlsx"])
 
     # for rule in agent.rules:
