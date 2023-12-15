@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.agent import Agent
 from app.schemas.agent import AgentCreate
+from app.schemas.agent import AgentUpdate
 from sqlalchemy.orm import joinedload
 from app.helpers.ssh_helper import make_ssh_connection
 import pdb
@@ -40,6 +41,18 @@ def get_rules_by_agent(db: Session, agent_id: int):
     return agent
 
 
+def update_agent(db: Session, agent_id: int, agent_update: AgentUpdate):
+    db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
+
+    if db_agent:
+        # Update agent attributes
+        for key, value in agent_update.dict().items():
+            setattr(db_agent, key, value)
+
+        db.commit()
+        db.refresh(db_agent)
+
+    return db_agent
 
 def get_agents_by_profile(db: Session, agent_profile_id:int):
     agents = (

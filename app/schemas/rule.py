@@ -9,6 +9,9 @@ class RuleBase(BaseModel):
 class RuleCreate(RuleBase):
     pass
 
+class RuleUpdate(RuleBase):
+    pass
+
 class Rule(RuleBase):
     id: int
     created_at: datetime

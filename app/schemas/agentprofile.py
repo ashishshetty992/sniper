@@ -8,6 +8,10 @@ class AgentProfileBase(BaseModel):
 class AgentProfileCreate(AgentProfileBase):
     pass
 
+
+class AgentProfileUpdate(AgentProfileBase):
+    pass
+
 class AgentProfile(AgentProfileBase):
     id: int
     created_at: datetime

@@ -11,6 +11,9 @@ class AgentBase(BaseModel):
 class AgentCreate(AgentBase):
     pass
 
+class AgentUpdate(AgentBase):
+    pass
+
 class Agent(AgentBase):
     id: int
     unique_id: str

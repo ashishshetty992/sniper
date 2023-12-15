@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.agentprofile import AgentProfile
 from app.models.agent import Agent
 from app.schemas.agentprofile import AgentProfileCreate
+from app.schemas.agentprofile import AgentProfileUpdate
 from typing import List
 from sqlalchemy.orm import joinedload
 
@@ -48,3 +49,24 @@ def get_agents_by_profile_id(db: Session, profile_id: int):
         return agents
 
     return None
+
+
+def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProfileUpdate, agent_ids: List[int]):
+    db_agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).first()
+
+    if db_agent_profile:
+        # Update agent profile attributes
+        for key, value in profile_update.dict().items():
+            setattr(db_agent_profile, key, value)
+
+        # Clear existing agents and add new ones
+        db_agent_profile.agents = []
+        for agent_id in agent_ids:
+            agent = db.query(Agent).filter(Agent.id == agent_id).first()
+            if agent:
+                db_agent_profile.agents.append(agent)
+
+        db.commit()
+        db.refresh(db_agent_profile)
+
+    return db_agent_profile
