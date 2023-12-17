@@ -18,7 +18,9 @@ from datetime import datetime
 import pdb
 
 from app.models.rule import Rule
-from app.crud.agentprofile import get_agents_by_profile_id
+from app.crud.agentprofile import get_agent_profile
+from app.crud.rule import get_all_agents_and_rule_by_rule_id
+from app.models.rule_execution_result import RuleExecutionResult
 
 
 scheduler = BackgroundScheduler()
@@ -94,23 +96,47 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
         trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, second=0, start_date=schedule.start_date, day=1)
     
     # fetch the reference and all the rules associated
-    if (schedule.reference == References.AGENT.value):
-        agent = get_rules_by_agent(db, schedule.reference_id)
-        schedule_rules_for_agent(db, agent, trigger)
-        print("scheduled rule run for the agent")
-    elif (schedule.reference == References.AGENTPROFILE.value):
-        agents:list[Agent] = get_agents_by_profile_id(db, schedule.reference_id)
-        for agent in agents:
-            schedule_rules_for_agent(db, agent, trigger)
-        print("scheduled rule run for the agent profile")
+    print(f"fetching rules and agents for reference_id : {schedule.reference_id}, reference: {schedule.reference}")
+    [agents, rules] = get_agents_and_rules_reference_id(db, schedule.reference, schedule.reference_id)
+    for agent in agents:
+        schedule_rules_for_agent(db, agent, rules, trigger)
+
+def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
+
+    if (reference == References.AGENT.value):
+        agents = get_rules_by_agent(db, reference_id)
+        rules = agents.rules
+    elif (reference == References.AGENTPROFILE.value):
+        agent_profile = get_agent_profile(db, reference_id)
+        agents = agent_profile.agents
+        rules = agent_profile.rules
+    elif (reference == References.RULE.value):
+        [agents, rule] = get_all_agents_and_rule_by_rule_id(db, reference_id)
+        rules = [rule]
     else:
-        raise Exception("Unknown reference")
+        raise Exception("unknown reference")
+    return [agents, rules]
 
 
-def schedule_rules_for_agent(db:Session, agent:int, trigger:CronTrigger):
-    # for rule in agent.rules:
-        # scheduler.add_job(rule, trigger, [agent.ip_address, agent.name, "xlsx"])
-    scheduler.add_job(search_file_extension_in_remote, trigger, [agent.ip_address, agent.name, "xlsx"])
+def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger):
+    for rule in rules:
+        print(f"scheduling rule for agent {agent.id} and rule : {rule.id}")
+        scheduler.add_job(search_file_extension_in_remote, trigger, [db, agent, rule])
 
-    # for rule in agent.rules:
-    #     #TODO add appropriate rule logic in code
+def rule_execution_job(db:Session, agent:Agent, rule:Rule):
+    start_time = datetime.now().timestamp()
+    result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule)
+    end_time = datetime.now().timestamp()
+    latency = end_time - start_time
+    rule_exec_result = {
+       'results':  result,
+       'latency' : latency,
+       'agent':agent,
+       'rule': rule
+    }
+    print("saving execution results in db")
+    db_result = RuleExecutionResult(rule_exec_result)
+    db.add(db_result)
+    db.commit()
+    db.refresh(db_result)
+    return db_result

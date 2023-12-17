@@ -25,3 +25,17 @@ rule_agent_association = Table(
     Column("rule_id", Integer, ForeignKey("rules.id")),
     Column("agent_id", Integer, ForeignKey("agents.id")),
 )
+
+agent_rule_exec_association = Table(
+    "agent_rule_exec_association",
+    Base.metadata,
+    Column("rule_exec_id", Integer, ForeignKey("rule_execution_result.id")),
+    Column("agent_id", Integer, ForeignKey("agents.id")),
+)
+
+rule_to_rule_exec_association =  Table(
+    "rule_to_rule_exec_association",
+    Base.metadata,
+    Column("rule_exec_id", Integer, ForeignKey("rule_execution_result.id")),
+    Column("rule_id", Integer, ForeignKey("rules.id")),
+)

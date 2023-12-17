@@ -4,7 +4,7 @@ from app.enums import References
 
 
 class ScheduleBase(BaseModel):
-    start_date: str
+    start_date: str # (Y-m-d)
     hour: int
     minutes: int
     frequency: str
