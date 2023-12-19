@@ -81,8 +81,8 @@ def get_all_agents_and_rule_by_rule_id(db:Session, rule_id:int):
     agent_ids = [ agent.id for agent in agents]
     agent_profile = rule.agent_profiles
     for profile in agent_profile:
-        agents = profile.agents
-        for agent in agents:
+        profile_agents = profile.agents
+        for agent in profile_agents:
             if agent.id not in agent_ids:
                 agents.extend(agent)
     return [agents, rule]

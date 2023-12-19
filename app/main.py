@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, dependencies
 from app.routers import schedule, user, role, oauth, agentprofile, agent, rule
 from app.database import engine, Base
+from sqlalchemy.orm import Session
+
+from app.crud.schedule import fetch_all_pending_schedules
+from app.helpers.jobs import init_scheduler, rule_run_scheduler
+from app.dependencies import get_db 
 
 app = FastAPI()
 
@@ -32,3 +37,14 @@ app.include_router(schedule.router)
 
 # Create tables in the database
 Base.metadata.create_all(bind=engine)
+
+init_scheduler()
+
+# fetch all scheduled jobs and run it if not executed
+def schedule_jobs(db=next(get_db())):
+    print("scheduling all pending jobs")
+    jobs = fetch_all_pending_schedules(db)
+    for job in jobs:
+        rule_run_scheduler(job,db)
+
+schedule_jobs()

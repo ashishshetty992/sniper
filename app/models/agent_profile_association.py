@@ -39,3 +39,10 @@ rule_to_rule_exec_association =  Table(
     Column("rule_exec_id", Integer, ForeignKey("rule_execution_result.id")),
     Column("rule_id", Integer, ForeignKey("rules.id")),
 )
+
+schedule_rule_exec_association =  Table(
+    "schedule_rule_exec_association",
+    Base.metadata,
+    Column("rule_exec_id", Integer, ForeignKey("rule_execution_result.id")),
+    Column("schedule_id", Integer, ForeignKey("schedules.id")),
+)

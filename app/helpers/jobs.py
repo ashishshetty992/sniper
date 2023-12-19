@@ -10,7 +10,7 @@ from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, cop
 from app.models.agent import Agent
 from fastapi import  Depends
 import shutil
-from app.enums import References
+from app.enums import References, ScheduledStatus
 from sqlalchemy.orm import Session
 from app.models.schedule import Schedule
 from datetime import datetime
@@ -24,10 +24,10 @@ from app.models.rule_execution_result import RuleExecutionResult
 
 
 scheduler = BackgroundScheduler()
-#TODO add it entry point
-print("scheduler started")
-scheduler.start()
 
+def init_scheduler():
+    print("scheduler started")
+    scheduler.start()
 
 def ssh_key_generation_job_scheduler(start_date:str, time:list, frequency=None):
     """
@@ -98,11 +98,13 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
     # fetch the reference and all the rules associated
     print(f"fetching rules and agents for reference_id : {schedule.reference_id}, reference: {schedule.reference}")
     [agents, rules] = get_agents_and_rules_reference_id(db, schedule.reference, schedule.reference_id)
+    print(f"fetched rules and agentsfor reference_id : {schedule.reference_id}, reference: {schedule.reference}, agent:{agents}")
     for agent in agents:
-        schedule_rules_for_agent(db, agent, rules, trigger)
+        schedule_rules_for_agent(db, agent, rules, trigger, schedule)
+
 
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
-
+    # pdb.set_trace()
     if (reference == References.AGENT.value):
         agents = get_rules_by_agent(db, reference_id)
         rules = agents.rules
@@ -118,25 +120,42 @@ def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:in
     return [agents, rules]
 
 
-def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger):
+def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger, schedule:Schedule):
     for rule in rules:
         print(f"scheduling rule for agent {agent.id} and rule : {rule.id}")
-        scheduler.add_job(search_file_extension_in_remote, trigger, [db, agent, rule])
-
-def rule_execution_job(db:Session, agent:Agent, rule:Rule):
-    start_time = datetime.now().timestamp()
-    result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule)
-    end_time = datetime.now().timestamp()
-    latency = end_time - start_time
-    rule_exec_result = {
-       'results':  result,
-       'latency' : latency,
-       'agent':agent,
-       'rule': rule
-    }
-    print("saving execution results in db")
-    db_result = RuleExecutionResult(rule_exec_result)
-    db.add(db_result)
+        scheduler.add_job(rule_execution_job, trigger, [db, agent, rule, schedule])
+    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+    dbschedule.status = ScheduledStatus.SCHEDULED.value
+    db.add(dbschedule)
+    db.expire_on_commit = False
     db.commit()
-    db.refresh(db_result)
+
+def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule:Schedule):
+    print(f"running rule for agent id : {agent.id} rule: {rule.id}")
+    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+    dbschedule.status = ScheduledStatus.RUNNING.value
+    db.add(dbschedule)
+    db.commit()
+    db.expunge(dbschedule)
+    try:
+        start_time = datetime.now().timestamp()
+        result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule)
+        end_time = datetime.now().timestamp()
+        latency = end_time - start_time
+        print("saving execution results in db")
+        db_result = RuleExecutionResult(results=str(result), latency=latency, agent=[agent], rule=[rule], schedule=[schedule], status='success')
+        db.add(db_result)
+        db.commit()
+        db.refresh(db_result)
+    except Exception as e:
+        pdb.set_trace()
+        db_result = RuleExecutionResult(results=str(e), agent=[agent], rule=[rule], schedule=[schedule], status='failed')
+        db.add(db_result)
+        db.commit()
+        db.refresh(db_result)
+
+    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+    dbschedule.status = ScheduledStatus.EXECUTED.value
+    db.add(dbschedule)
+    db.commit()
     return db_result
