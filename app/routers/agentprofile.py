@@ -42,6 +42,12 @@ def read_rules_by_agent(agentprofile_id: int, db: Session = Depends(dependencies
     agents = crud_get_agents_by_profile_id(db, agentprofile_id)
     return {"rules":rules,"agents": agents}
 
+
+# @router.get("/update_agent_profile/{agentprofile_id}/")
+# def read_rules_by_agent(agentprofile_id: int, db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
+#     rules = crud_get_rules_by_agentprofile(db, agentprofile_id)
+#     return {"rules":profiles}
+
 @router.post("/schedule/{agent_profile_id}/rule-run")
 async def schedule_rule_run(agent_profile_id, time, date, frequency):
     start_date:str = agent_profile_id

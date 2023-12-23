@@ -55,7 +55,6 @@ def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProf
     db_agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).first()
 
     if db_agent_profile:
-        # Update agent profile attributes
         for key, value in profile_update.dict().items():
             setattr(db_agent_profile, key, value)
 
