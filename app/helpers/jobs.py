@@ -148,7 +148,6 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule:Schedule):
         db.commit()
         db.refresh(db_result)
     except Exception as e:
-        pdb.set_trace()
         db_result = RuleExecutionResult(results=str(e), agent=[agent], rule=[rule], schedule=[schedule], status='failed')
         db.add(db_result)
         db.commit()
