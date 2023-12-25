@@ -139,7 +139,7 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule:Schedule):
     db.expunge(dbschedule)
     try:
         start_time = datetime.now().timestamp()
-        result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule)
+        result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
         end_time = datetime.now().timestamp()
         latency = end_time - start_time
         print("saving execution results in db")

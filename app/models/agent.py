@@ -10,10 +10,10 @@ class Agent(Base):
     __tablename__ = "agents"
 
     id = Column(Integer, primary_key=True, index=True)
-    unique_id = Column(String(255), unique=True, index=True)
+    agent_name = Column(String(255), unique=True, index=True) # agent identifier name for better readability
     name = Column(String(255), index=True)
     ip_address = Column(String(255))
-    active = Column(Boolean, default=True)
+    active = Column(Boolean, default=True,  index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     

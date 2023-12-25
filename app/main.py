@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, dependencies
+from fastapi import Depends, FastAPI, HTTPException, dependencies
 from app.routers import schedule, user, role, oauth, agentprofile, agent, rule
 from app.database import engine, Base
 from sqlalchemy.orm import Session
@@ -42,9 +42,12 @@ init_scheduler()
 
 # fetch all scheduled jobs and run it if not executed
 def schedule_jobs(db=next(get_db())):
-    print("scheduling all pending jobs")
-    jobs = fetch_all_pending_schedules(db)
-    for job in jobs:
-        rule_run_scheduler(job,db)
+    try:
+        print("scheduling all pending jobs")
+        jobs = fetch_all_pending_schedules(db)
+        for job in jobs:
+            rule_run_scheduler(job,db)
+    except Exception as e:
+        print("Exception:", e)
 
 schedule_jobs()

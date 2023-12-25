@@ -1,5 +1,5 @@
 # models/rule.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
@@ -13,6 +13,10 @@ class Rule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), index=True)
     exec_rule = Column(String(255))
+    path = Column(String(255))
+    category = Column(String(255))
+    sub_category = Column(String(255))
+    active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     

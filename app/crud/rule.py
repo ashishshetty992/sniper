@@ -53,11 +53,11 @@ def update_rule(db: Session, rule_id: int, rule_update: RuleUpdate, agent_ids: L
 def get_rule(db: Session, rule_id: int):
     return db.query(Rule).filter(Rule.id == rule_id).first()
 
-def get_rules(db: Session, skip: int = 0, limit: int = 10):
+def get_rules(db: Session, skip: int = 0, limit: int = 1000):
     return db.query(Rule).offset(skip).limit(limit).all()
 
 
-def get_rules_with_agents_and_profile(db: Session, skip: int = 0, limit: int = 10):
+def get_rules_with_agents_and_profile(db: Session, skip: int = 0, limit: int = 1000):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
     rules = (
         db.query(Rule)
@@ -76,6 +76,7 @@ def get_rules_for_agent(db: Session, agent_id:int):
 
 def get_all_agents_and_rule_by_rule_id(db:Session, rule_id:int):
     rule = db.query(Rule).filter(Rule.id == rule_id).first()
+    if(not rule): raise Exception(f"Rule not present for the id : {rule_id}")
     # get all the agents and agent profile attached to the rule
     agents = rule.agents
     agent_ids = [ agent.id for agent in agents]

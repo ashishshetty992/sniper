@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from app.crud.rule import create_rule as crud_create_rule
 from app.crud.rule import get_rule as crud_get_rule
 from app.crud.rule import get_rules as crud_get_rules
+from app.crud.rule import update_rule as crud_update_rules
 # from app.crud.rule import execute_rule_by_id as execute_rule_by_id
 from app.crud.rule import get_rules_with_agents_and_profile as crud_get_rules_with_agents_and_profile
-from app.schemas.rule import RuleCreate
+from app.schemas.rule import RuleCreate, RuleUpdate
 from app.models.response import RuleResponseModel
 from app import dependencies
 from app.dependencies import get_db
@@ -31,14 +32,21 @@ def read_rule(rule_id: int, db: Session = Depends(get_db), current_user: User = 
     return rule
 
 @router.get("/rules/")
-def read_rules(skip: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def read_rules(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rules = crud_get_rules(db, skip, limit)
     return rules
 
 @router.get("/get_rules_with_agents_and_profile/")
-def read_rules(skip: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def read_rules(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rules = crud_get_rules_with_agents_and_profile(db, skip, limit)
     return rules
+
+@router.put("/rules/{rule_id}")
+def update_rule(rule_id: int,  rule_update: RuleUpdate, agent_ids:List[int], agent_profile_ids:List[int],db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    rule = crud_update_rules(db, rule_id, rule_update, agent_ids, agent_profile_ids)
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return rule
 
 # @router.get("/rule_agents_profiles/{rule_id}")
 # def get_agents_profiles_on_rules(rule_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

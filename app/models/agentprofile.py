@@ -1,5 +1,5 @@
 # models/agent_profile.py
-from sqlalchemy import Column, Integer, String, DateTime, Table, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Table, ForeignKey
 from app.database import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship
@@ -13,6 +13,7 @@ class AgentProfile(Base):
     name = Column(String(255), index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    active = Column(Boolean, default=True)
     
     # Add a reference to the Agents that are associated with this profile
     agents = relationship("Agent", secondary="agent_profile_association")

@@ -20,13 +20,13 @@ def create_agent(db: Session, agent: AgentCreate):
 def get_agent(db: Session, agent_id: int):
     return db.query(Agent).filter(Agent.id == agent_id).first()
 
-def get_agents(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(Agent).offset(skip).limit(limit).all()
+def get_agents(db: Session, skip: int = 0, limit: int = 1000):
+    return db.query(Agent).filter(Agent.active ==True).offset(skip).limit(limit).all()
 
-def get_agents_with_profiles(db: Session, skip: int = 0, limit: int = 10):
+def get_agents_with_profiles(db: Session, skip: int = 0, limit: int = 1000):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
     agents = (
-        db.query(Agent)
+        db.query(Agent).filter(Agent.active ==True)
         .options(joinedload(Agent.profiles))  # Use joinedload to eagerly load agent profiles
         .offset(skip)
         .limit(limit)
@@ -41,8 +41,7 @@ def get_rules_by_agent(db: Session, agent_id: int):
 
 
 def update_agent(db: Session, agent_id: int, agent_update: AgentUpdate):
-    db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
-
+    db_agent = db.query(Agent).filter(Agent.id == agent_id).filter(Agent.active ==True).first()
     if db_agent:
         # Update agent attributes
         for key, value in agent_update.dict().items():
@@ -55,6 +54,6 @@ def update_agent(db: Session, agent_id: int, agent_update: AgentUpdate):
 
 def get_agents_by_profile(db: Session, agent_profile_id:int):
     agents = (
-        db.query(Agent).filter(Agent.profiles == agent_profile_id).all()
+        db.query(Agent).filter(Agent.profiles == agent_profile_id)..filter(Agent.active ==True).all()
     )
     return agents

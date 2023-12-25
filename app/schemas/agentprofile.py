@@ -9,8 +9,9 @@ class AgentProfileCreate(AgentProfileBase):
     pass
 
 
-class AgentProfileUpdate(AgentProfileBase):
-    pass
+class AgentProfileUpdate(BaseModel):
+    name: str
+    active: bool
 
 class AgentProfile(AgentProfileBase):
     id: int

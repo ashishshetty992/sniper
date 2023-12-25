@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 def create_agent_profile(db: Session, agent_profile: AgentProfileCreate, agent_ids: List[int]):
     db_agent_profile = AgentProfile(**agent_profile.dict())
     for agent_id in agent_ids:
-        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        agent = db.query(Agent).filter(Agent.id == agent_id).filter(Agent.active ==True).first()
         if agent:
             db_agent_profile.agents.append(agent)
     db.add(db_agent_profile)
@@ -21,7 +21,7 @@ def get_agent_profile(db: Session, agent_profile_id: int):
     return db.query(AgentProfile).filter(AgentProfile.id == agent_profile_id).first()
 
 def get_agent_profiles(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(AgentProfile).offset(skip).limit(limit).all()
+    return db.query(AgentProfile).filter(AgentProfile.active ==True).offset(skip).limit(limit).all()
 
 def get_rules_by_agentprofile(db: Session, agent_profile_id: int):
     agent_profile = db.query(AgentProfile).filter(AgentProfile.id == agent_profile_id).first()
@@ -31,7 +31,7 @@ def get_rules_by_agentprofile(db: Session, agent_profile_id: int):
 def get_profiles_with_agents(db: Session, skip: int = 0, limit: int = 10):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
     profile = (
-        db.query(AgentProfile)
+        db.query(AgentProfile).filter(AgentProfile.active ==True)
         .options(joinedload(AgentProfile.agents))  # Use joinedload to eagerly load agent profiles
         .offset(skip)
         .limit(limit)
@@ -52,7 +52,7 @@ def get_agents_by_profile_id(db: Session, profile_id: int):
 
 
 def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProfileUpdate, agent_ids: List[int]):
-    db_agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).first()
+    db_agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).filter(AgentProfile.active ==True).first()
 
     if db_agent_profile:
         for key, value in profile_update.dict().items():
@@ -61,7 +61,7 @@ def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProf
         # Clear existing agents and add new ones
         db_agent_profile.agents = []
         for agent_id in agent_ids:
-            agent = db.query(Agent).filter(Agent.id == agent_id).first()
+            agent = db.query(Agent).filter(Agent.id == agent_id).filter(AgentProfile.active ==True).first()
             if agent:
                 db_agent_profile.agents.append(agent)
 

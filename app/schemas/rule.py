@@ -4,13 +4,19 @@ from datetime import datetime
 
 class RuleBase(BaseModel):
     name: str
+    category:str
+    sub_category:str
     exec_rule: str
+    path:str
 
 class RuleCreate(RuleBase):
     pass
 
-class RuleUpdate(RuleBase):
-    pass
+class RuleUpdate(BaseModel):
+    name:str
+    path:str
+    category:str
+    sub_category:str
 
 class Rule(RuleBase):
     id: int

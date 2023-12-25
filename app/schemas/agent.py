@@ -11,12 +11,13 @@ class AgentBase(BaseModel):
 class AgentCreate(AgentBase):
     pass
 
-class AgentUpdate(AgentBase):
-    pass
+class AgentUpdate(BaseModel):
+    agent_name: str
+    active: bool
 
 class Agent(AgentBase):
     id: int
-    unique_id: str
+    agent_name: str
     created_at: datetime
     updated_at: datetime
 
