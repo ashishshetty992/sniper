@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 
 from app.crud.schedule import fetch_all_pending_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
+from app.helpers.ssh_helper import generate_ssh_key_pairs
 from app.dependencies import get_db 
 
 app = FastAPI()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os 
 
 # Define a list of allowed origins
 # "*" means all origins are allowed. You can replace it with a specific origin like "http://localhost:8000" if needed.
@@ -49,4 +51,16 @@ def schedule_jobs(db=next(get_db())):
     except Exception as e:
         print("Exception:", e)
 
+
+def generate_ssh_keys_if_not_present():
+    try:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        # check if ssh keys are present in the .ssh folder
+        isdir = os.path.isdir(dir_path+'/.ssh')
+        isPrivateFile = os.path.isdir(f"{dir_path}/.ssh/')
+        if not isdir:
+            generate_ssh_key_pairs()
+        elif
+    except Exception as e:
+        print("Exception:", e)
 schedule_jobs()
