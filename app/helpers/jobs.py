@@ -79,8 +79,6 @@ def ssh_key_generation_job():
         
         print("replacing old ssh key with new ssh private key")   
         # replace server private key with the new key generated
-        shutil.copyfile(PRIVATE_KEY_FILE_PATH, SSH_DIRECTORY+'/id_rsa_old')
-        shutil.copyfile(PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY+'/id_rsa_old.pub')
         shutil.copyfile(PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH)
         shutil.copyfile(PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH)
 

@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.crud.schedule import fetch_all_pending_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
 from app.helpers.ssh_helper import generate_ssh_key_pairs
-from app.dependencies import get_db 
+from app.dependencies import get_db
+from sniper.app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, SSH_DIRECTORY 
 
 app = FastAPI()
 
@@ -54,13 +55,16 @@ def schedule_jobs(db=next(get_db())):
 
 def generate_ssh_keys_if_not_present():
     try:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
         # check if ssh keys are present in the .ssh folder
-        isdir = os.path.isdir(dir_path+'/.ssh')
-        isPrivateFile = os.path.isdir(f"{dir_path}/.ssh/')
-        if not isdir:
+        isdir = os.path.isdir(SSH_DIRECTORY+'/.ssh')
+        isPublicFile = os.path.isfile(f"{SSH_DIRECTORY}/{PUBLIC_KEY_FILE_NAME}")
+        isPrivateFile = os.path.isfile(f"{SSH_DIRECTORY}/{PRIVATE_KEY_FILE_NAME}")
+        
+        if (not isdir or not isPublicFile or not isPrivateFile):
             generate_ssh_key_pairs()
-        elif
     except Exception as e:
         print("Exception:", e)
+
+
 schedule_jobs()
+generate_ssh_keys_if_not_present()

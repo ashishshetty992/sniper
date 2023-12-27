@@ -1,5 +1,6 @@
 """ script to connect to the remote agents
 """
+import os
 import sys
 import paramiko
 import stat
@@ -175,7 +176,8 @@ def set_permissions_to_remote_ssh_key(sftp_client, ssh_client, source_path, dest
 def generate_ssh_key_pairs():
     key = paramiko.RSAKey.generate(2048)
     # key.from_private_key(keyout)
-    key.write_private_key_file(PRIVATE_KEY_FILE_NAME)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    key.write_private_key_file(PRIVATE_KEY_FILE_PATH)
     public_key = '{} {}'.format(key.get_name(), key.get_base64())
     file = open(PUBLIC_KEY_FILE_NAME, "w")
     file.write(public_key)
