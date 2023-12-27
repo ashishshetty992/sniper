@@ -4,6 +4,7 @@ from datetime import datetime
 
 class AgentProfileBase(BaseModel):
     name: str
+    active: bool
 
 class AgentProfileCreate(AgentProfileBase):
     pass

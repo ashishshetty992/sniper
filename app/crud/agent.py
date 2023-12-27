@@ -54,6 +54,6 @@ def update_agent(db: Session, agent_id: int, agent_update: AgentUpdate):
 
 def get_agents_by_profile(db: Session, agent_profile_id:int):
     agents = (
-        db.query(Agent).filter(Agent.profiles == agent_profile_id)..filter(Agent.active ==True).all()
+        db.query(Agent).filter(Agent.profiles == agent_profile_id).filter(Agent.active ==True).all()
     )
     return agents

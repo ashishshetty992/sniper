@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.crud.analytics import get_analytics_data
 from app.crud.rule import create_rule as crud_create_rule
 from app.crud.rule import get_rule as crud_get_rule
 from app.crud.rule import get_rules as crud_get_rules
 from app.crud.rule import update_rule as crud_update_rules
+from app.crud.rule import get_rules_with_agents_and_profile_by_rule_id as crud_get_rules_with_agents_and_profile_by_rule_id
 # from app.crud.rule import execute_rule_by_id as execute_rule_by_id
 from app.crud.rule import get_rules_with_agents_and_profile as crud_get_rules_with_agents_and_profile
+from app.crud.analytics import get_analytics_data as get_analytics_data
 from app.schemas.rule import RuleCreate, RuleUpdate
 from app.models.response import RuleResponseModel
 from app import dependencies
@@ -31,6 +34,13 @@ def read_rule(rule_id: int, db: Session = Depends(get_db), current_user: User = 
         raise HTTPException(status_code=404, detail="Rule not found")
     return rule
 
+@router.get("/get_rules_with_agents_and_profile_by_rule_id/{rule_id}")
+def read_rule(rule_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    rule = crud_get_rules_with_agents_and_profile_by_rule_id(db, rule_id)
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return rule
+
 @router.get("/rules/")
 def read_rules(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rules = crud_get_rules(db, skip, limit)
@@ -39,6 +49,7 @@ def read_rules(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db), 
 @router.get("/get_rules_with_agents_and_profile/")
 def read_rules(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rules = crud_get_rules_with_agents_and_profile(db, skip, limit)
+    analytics_data = get_analytics_data(db)
     return rules
 
 @router.put("/rules/{rule_id}")
@@ -47,6 +58,13 @@ def update_rule(rule_id: int,  rule_update: RuleUpdate, agent_ids:List[int], age
     if rule is None:
         raise HTTPException(status_code=404, detail="Rule not found")
     return rule
+
+@router.get("/get_analytics_data/")
+def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    data = get_analytics_data(db)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Analytics Not found")
+    return data
 
 # @router.get("/rule_agents_profiles/{rule_id}")
 # def get_agents_profiles_on_rules(rule_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

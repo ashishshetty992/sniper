@@ -69,21 +69,33 @@ def get_rules_with_agents_and_profile(db: Session, skip: int = 0, limit: int = 1
     )
     return rules
 
+def get_rules_with_agents_and_profile_by_rule_id(db: Session, rule_id: int):
+    # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
+    rule = db.query(Rule).filter(Rule.id == rule_id).first()
+    rule_agents = rule.agents
+    rule_agent_profiles = rule.agent_profiles
+    all_agents = db.query(Agent).all()
+    all_agent_profiles = db.query(AgentProfile).all()
+    return {'rule':rule,'agents': all_agents, 'agent_profiles':all_agent_profiles}
+
 def get_rules_for_agent(db: Session, agent_id:int):
     # Query the Agent model, specifying a join to the AgentProfile model using the 'agents' relationship
     return db.query(Rule).filter(Agent.id == agent_id)
 
-
-def get_all_agents_and_rule_by_rule_id(db:Session, rule_id:int):
+def get_all_agents_and_rule_by_rule_id(db: Session, rule_id: int):
     rule = db.query(Rule).filter(Rule.id == rule_id).first()
-    if(not rule): raise Exception(f"Rule not present for the id : {rule_id}")
+    if not rule:
+        raise Exception(f"Rule not present for the id: {rule_id}")
+
     # get all the agents and agent profile attached to the rule
     agents = rule.agents
-    agent_ids = [ agent.id for agent in agents]
-    agent_profile = rule.agent_profiles
-    for profile in agent_profile:
+    agent_ids = [agent.id for agent in agents]
+    agent_profiles = rule.agent_profiles
+
+    for profile in agent_profiles:
         profile_agents = profile.agents
         for agent in profile_agents:
             if agent.id not in agent_ids:
-                agents.extend(agent)
+                agents.append(agent)
+
     return [agents, rule]

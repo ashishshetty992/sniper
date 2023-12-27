@@ -4,6 +4,7 @@ from datetime import datetime
 
 class AgentBase(BaseModel):
     name: str
+    agent_name: str
     ip_address: str
     password: str
     active: bool
@@ -14,10 +15,10 @@ class AgentCreate(AgentBase):
 class AgentUpdate(BaseModel):
     agent_name: str
     active: bool
+    updated_at: datetime
 
 class Agent(AgentBase):
     id: int
-    agent_name: str
     created_at: datetime
     updated_at: datetime
 
