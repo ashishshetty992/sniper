@@ -7,7 +7,7 @@ from app.crud.schedule import fetch_all_pending_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
 from app.helpers.ssh_helper import generate_ssh_key_pairs
 from app.dependencies import get_db
-from sniper.app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, SSH_DIRECTORY 
+from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, SSH_DIRECTORY 
 
 app = FastAPI()
 
