@@ -3,7 +3,7 @@ from app.routers import schedule, user, role, oauth, agentprofile, agent, rule
 from app.database import engine, Base
 from sqlalchemy.orm import Session
 
-from app.crud.schedule import fetch_all_pending_schedules
+from app.crud.schedule import fetch_all_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
 from app.helpers.ssh_helper import generate_ssh_key_pairs
 from app.dependencies import get_db
@@ -14,6 +14,7 @@ app = FastAPI()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os 
+import pdb
 
 # Define a list of allowed origins
 # "*" means all origins are allowed. You can replace it with a specific origin like "http://localhost:8000" if needed.
@@ -46,8 +47,9 @@ init_scheduler()
 def schedule_jobs(db=next(get_db())):
     try:
         print("scheduling all pending jobs")
-        jobs = fetch_all_pending_schedules(db)
+        jobs = fetch_all_schedules(db)
         for job in jobs:
+            if job.status == ScheduledStatus.
             rule_run_scheduler(job,db)
     except Exception as e:
         print("Exception:", e)
@@ -65,6 +67,5 @@ def generate_ssh_keys_if_not_present():
     except Exception as e:
         print("Exception:", e)
 
-
-schedule_jobs()
 generate_ssh_keys_if_not_present()
+schedule_jobs()

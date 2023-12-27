@@ -6,7 +6,7 @@ import paramiko
 import stat
 import pdb
 
-from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH
+from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
 
 
 def make_ssh_connection(hostname,username, password=None, port=22):
@@ -176,10 +176,10 @@ def set_permissions_to_remote_ssh_key(sftp_client, ssh_client, source_path, dest
 def generate_ssh_key_pairs():
     key = paramiko.RSAKey.generate(2048)
     # key.from_private_key(keyout)
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    os.makedirs(SSH_DIRECTORY, exist_ok=True)
     key.write_private_key_file(PRIVATE_KEY_FILE_PATH)
     public_key = '{} {}'.format(key.get_name(), key.get_base64())
-    file = open(PUBLIC_KEY_FILE_NAME, "w")
+    file = open(PUBLIC_KEY_FILE_PATH, "w")
     file.write(public_key)
     file.close()
 

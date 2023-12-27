@@ -10,7 +10,7 @@ def create_schedule(db: Session, schedule: ScheduleCreate):
     db.refresh(db_schedule)
     return db_schedule
 
-def fetch_all_pending_schedules(db: Session):
-    db_schedule = db.query(Schedule).filter(Schedule.status.not_in([ScheduledStatus.EXECUTED.value]))
+def fetch_all_schedules(db: Session):
+    db_schedule = db.query(Schedule)
 
     return db_schedule
