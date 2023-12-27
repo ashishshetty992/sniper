@@ -7,14 +7,15 @@ from app.crud.schedule import fetch_all_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
 from app.helpers.ssh_helper import generate_ssh_key_pairs
 from app.dependencies import get_db
-from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY 
+from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
+from app.enums import ScheduledStatus 
+from datetime import datetime
 
 app = FastAPI()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os 
-import pdb
+import os
 
 # Define a list of allowed origins
 # "*" means all origins are allowed. You can replace it with a specific origin like "http://localhost:8000" if needed.
@@ -49,7 +50,9 @@ def schedule_jobs(db=next(get_db())):
         print("scheduling all pending jobs")
         jobs = fetch_all_schedules(db)
         for job in jobs:
-            if job.status == ScheduledStatus.
+            if job.status != ScheduledStatus.EXECUTED:
+                job.hour = datetime.now().hour
+                job.minutes = datetime.now().minute + 1
             rule_run_scheduler(job,db)
     except Exception as e:
         print("Exception:", e)
