@@ -106,8 +106,9 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
     # pdb.set_trace()
     if (reference == References.AGENT.value):
-        agents = get_rules_by_agent(db, reference_id)
-        rules = agents.rules
+        agent = get_rules_by_agent(db, reference_id)
+        rules = agent.rules
+        agents = [agent]
     elif (reference == References.AGENTPROFILE.value):
         agent_profile = get_agent_profile(db, reference_id)
         agents = agent_profile.agents

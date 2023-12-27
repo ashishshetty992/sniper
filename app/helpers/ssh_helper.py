@@ -189,11 +189,7 @@ def search_file_extension_in_remote(hostname, username, extension, remote_path="
     print(f"searching files with {extension} extension ....")
 
     stdin, stdout, stderr = ssh_client.exec_command(f"dir /S /B {remote_path}\\*.{extension}")
-    
-    print(stderr)
-    print(stdout)
-    print(stdin)
-    pdb.set_trace()
+
     if(stderr.read().decode() and stderr.read().decode()!=""):
         raise Exception(stderr.read().decode())
     
