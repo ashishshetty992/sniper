@@ -21,4 +21,7 @@ AUTH.py for security (TBD)
 
 Release Doc
 1. create SSH key in the server and copy the key in common folder, all the future keys will be generated and copied to same folder
-2. 
+
+
+SETUP:
+1. Please create env variables with these variables: MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD
