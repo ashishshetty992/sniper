@@ -1,37 +1,39 @@
-# script to setup initial resources and its run only once
-
 import subprocess
-import sys
 import os
+from dotenv import load_dotenv
 
-def set_env_variables():
-    print("Setting up environment variables...")
-    os.environ["MYSQL_ROOT_PASSWORD"] = input("Enter MySQL root password (default: root_password): ") or "root_password"
-    os.environ["MYSQL_DATABASE"] = input("Enter MySQL database name (default: my_database): ") or "my_database"
-    os.environ["MYSQL_USER"] = input("Enter MySQL user (default: mysql_user): ") or "mysql_user"
-    os.environ["MYSQL_PASSWORD"] = input("Enter MySQL password (default: mysql_password): ") or "mysql_password"
-
-
-def install_docker():
+def install_mysql():
     try:
-        subprocess.run(["docker", "--version"], check=True)
-        print("Docker is already installed.")
-    except subprocess.CalledProcessError:
-        print("Installing Docker...")
-        subprocess.run(["choco", "install", "docker-desktop", "-y"], check=True)
-        print("Docker installed successfully.")
+        subprocess.run(["mysql", "--version"], check=True)
+        print("MySQL is already installed.")
+    except Exception:
+        print("Installing MySQL...")
+        subprocess.run(["choco", "install", "mysql", "-y"], check=True)
+        print("MySQL installed successfully.")
 
-def run_docker_compose():
-    print("Running Docker Compose...")
-    subprocess.run(["docker-compose", "up", "-d"], check=True)
-    print("Docker Compose completed successfully.")
+def configure_mysql():
+    print("Configuring MySQL...")
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    print(dir_path)
+    load_dotenv(dir_path+"/setup.env")
+    # You can customize these variables according to your needs
+    mysql_root_password = os.getenv('MYSQL_ROOT_PASSWORD') or "root_password"
+    mysql_database = os.getenv("MYSQL_DATABASE") or "my_database"
+    mysql_user = os.getenv("MYSQL_USER_NAME") or "mysql_user"
+    mysql_user_password = os.getenv("MYSQL_USER_PASSWORD") or "mysql_password"
+
+    print(mysql_root_password, mysql_database, mysql_user, mysql_user_password)
+    # Set up MySQL root password
+    subprocess.run(f'mysqladmin -u root password {mysql_root_password}', shell=True, check=True)
+
+    # Create MySQL database and user
+    subprocess.run(f'mysql -u root -p{mysql_root_password} -e "CREATE DATABASE {mysql_database}"', shell=True, check=True)
+    subprocess.run(f'mysql -u root -p{mysql_root_password} -e "CREATE USER \'{mysql_user}\'@\'localhost\' IDENTIFIED BY \'{mysql_user_password}\'"', shell=True, check=True)
+    subprocess.run(f'mysql -u root -p{mysql_root_password} -e "GRANT ALL PRIVILEGES ON {mysql_database}.* TO \'{mysql_user}\'@\'localhost\'"', shell=True, check=True)
+    subprocess.run(f'mysql -u root -p{mysql_root_password} -e "FLUSH PRIVILEGES"', shell=True, check=True)
+
+    print("MySQL configuration completed successfully.")
 
 if __name__ == "__main__":
-    set_env_variables()
-    
-    if not os.path.exists("docker-compose.yml"):
-        print("Error: docker-compose.yml not found. Please create the file.")
-        sys.exit(1)
-
-    install_docker()
-    run_docker_compose()
+    install_mysql()
+    configure_mysql()
