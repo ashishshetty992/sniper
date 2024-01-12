@@ -131,7 +131,6 @@ def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:
 
 def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
     print(f"running rule for agent id : {agent.id} rule: {rule.id}")
-    pdb.set_trace()
     dbschedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     dbschedule.status = ScheduledStatus.RUNNING.value
     db.add(dbschedule)
