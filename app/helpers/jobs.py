@@ -98,7 +98,7 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
     [agents, rules] = get_agents_and_rules_reference_id(db, schedule.reference, schedule.reference_id)
     print(f"fetched rules and agentsfor reference_id : {schedule.reference_id}, reference: {schedule.reference}, agent:{agents}")
     for agent in agents:
-        schedule_rules_for_agent(db, agent, rules, trigger, schedule)
+        schedule_rules_for_agent(db, agent, rules, trigger, schedule.id)
 
 
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
@@ -119,19 +119,20 @@ def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:in
     return [agents, rules]
 
 
-def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger, schedule:Schedule):
+def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger, schedule_id:int):
     for rule in rules:
         print(f"scheduling rule for agent {agent.id} and rule : {rule.id}")
-        scheduler.add_job(rule_execution_job, trigger, [db, agent, rule, schedule])
-    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+        scheduler.add_job(rule_execution_job, trigger, [db, agent, rule, schedule_id])
+    dbschedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     dbschedule.status = ScheduledStatus.SCHEDULED.value
     db.add(dbschedule)
     db.expire_on_commit = False
     db.commit()
 
-def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule:Schedule):
+def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
     print(f"running rule for agent id : {agent.id} rule: {rule.id}")
-    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+    pdb.set_trace()
+    dbschedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     dbschedule.status = ScheduledStatus.RUNNING.value
     db.add(dbschedule)
     db.commit()
@@ -142,17 +143,17 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule:Schedule):
         end_time = datetime.now().timestamp()
         latency = end_time - start_time
         print("saving execution results in db")
-        db_result = RuleExecutionResult(results=str(result), latency=latency, agent=[agent], rule=[rule], schedule=[schedule], status='success')
+        db_result = RuleExecutionResult(results=str(result), latency=latency, agent=[agent], rule=[rule], schedule=[dbschedule], status='success')
         db.add(db_result)
         db.commit()
         db.refresh(db_result)
     except Exception as e:
-        db_result = RuleExecutionResult(results=str(e), agent=[agent], rule=[rule], schedule=[schedule], status='failed')
+        db_result = RuleExecutionResult(results=str(e), agent=[agent], rule=[rule], schedule=[dbschedule], status='failed')
         db.add(db_result)
         db.commit()
         db.refresh(db_result)
 
-    dbschedule = db.query(Schedule).filter(Schedule.id == schedule.id).first()
+    dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
     dbschedule.status = ScheduledStatus.EXECUTED.value
     db.add(dbschedule)
     db.commit()

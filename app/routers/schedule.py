@@ -1,7 +1,7 @@
 import pdb
 from fastapi import  HTTPException, Request, APIRouter
 from app import dependencies
-from app.crud.schedule import create_schedule
+from app.crud.schedule import create_schedule, get_all_schedules
 from app.helpers.jobs import ssh_key_generation_job_scheduler, rule_run_scheduler
 from sqlalchemy.orm import Session
 from fastapi import  Depends
@@ -29,3 +29,12 @@ async def schedule_rule_run(schedule: ScheduleCreate,  db:Session = Depends(depe
     except Exception as e:
         print("Exception:", e)
         raise HTTPException(status_code=400, detail="Failed to schedule rule")
+
+@router.get("/schedules")
+async def fetch_all_schedules(skip: int = 0, limit: int = 10, db:Session = Depends(dependencies.get_db)):
+    try:
+        schedules = get_all_schedules(db, skip, limit)
+        return schedules
+    except Exception as e:
+        print("Exception:", e)
+        raise HTTPException(status_code=400, detail="Failed to fetch all schedules")

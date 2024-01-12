@@ -47,7 +47,7 @@ def create_user(user: UserCreate, role_ids: List[int], db: Session = Depends(get
     # If none of the conditions matched, return an error
     raise HTTPException(status_code=403, detail="You do not have permission to create users")
 
-# @router.post("/users/")
-# def create_user(user: UserCreate, role_ids: List[int], db: Session = Depends(get_db)):
-#     roles = get_roles(db, role_ids)
-#     return Crud.create_user(db, user, role_ids)
+@router.post("/default-users/")
+def create_default_user(user: UserCreate, role_ids: List[int], db: Session = Depends(get_db)):
+    roles = get_roles(db, role_ids)
+    return Crud.create_user(db, user, role_ids)
