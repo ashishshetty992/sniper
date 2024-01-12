@@ -35,7 +35,8 @@ def make_ssh_connection(hostname,username, password=None, port=22):
         
         #command to give certain permission and restriction for authorized keys
         #TO DO fetch the path without hardoding
-        set_permissions_to_remote_ssh_key(sftp_client, ssh_client, "app/scripts/setPermissionToAdminAuthKey.ps1", "setPermissionToAdminAuthKey.ps1")
+        dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/scripts/setPermissionToAdminAuthKey.ps1"
+        set_permissions_to_remote_ssh_key(sftp_client, ssh_client, dir_path, "setPermissionToAdminAuthKey.ps1")
         
         #close connection using password authentication
         ssh_client.close()
