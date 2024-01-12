@@ -17,8 +17,7 @@ load_dotenv(dir_path)
 
 # DATABASE_URL = "mysql+mysqlconnector://sniper:password@192.168.0.100/sniper"
 # DATABASE_URL = "mysql+mysqlconnector://shiksha:Shiksha123@172.31.5.1/sniper_new"
-DATABASE_URL = f"mysql://{os.getenv("MYSQL_USER_NAME")}:{os.getenv("MYSQL_USER_PASSWORD")}@localhost/{os.getenv("MYSQL_DATABASE")}"
-print("DATABASE_URL-->", DATABASE_URL)
+DATABASE_URL = f"mysql://{os.getenv('MYSQL_USER_NAME')}:{os.getenv('MYSQL_USER_PASSWORD')}@localhost/{os.getenv('MYSQL_DATABASE')}"
 
 
 engine = create_engine(DATABASE_URL)

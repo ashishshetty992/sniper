@@ -1,5 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, dependencies
-from app.routers import schedule, user, role, oauth, agentprofile, agent, rule
+from app.routers import schedule, user, role, oauth, agentprofile, agent, rule, ruleexecutionresult
 from app.database import engine, Base
 from sqlalchemy.orm import Session
 
@@ -38,6 +38,7 @@ app.include_router(agentprofile.router)
 app.include_router(rule.router)
 app.include_router(oauth.router)
 app.include_router(schedule.router)
+app.include_router(ruleexecutionresult.router)
 
 # Create tables in the database
 Base.metadata.create_all(bind=engine)
