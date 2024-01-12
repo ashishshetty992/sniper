@@ -15,7 +15,7 @@ import pdb
 from datetime import datetime, timedelta
 
 router = APIRouter()
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1000
 
 @router.post("/token", response_model=TokenResponseSchema)
 def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):

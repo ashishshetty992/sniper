@@ -32,7 +32,7 @@ def read_role(role_id: int, db: Session = Depends(get_db)):
     return role
 
 @router.get("/roles/")
-def get_roles(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, ):
+def get_roles(db: Session = Depends(get_db), skip: int = 0, limit: int = 1000, ):
     roles = role_crud.get_roles(db)
     return roles
 

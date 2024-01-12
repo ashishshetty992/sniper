@@ -31,13 +31,13 @@ def read_agent_profile(agent_profile_id: int, db: Session = Depends(dependencies
 
 
 @router.get("/agentprofiles/")
-def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
+def read_agent_profiles(skip: int = 0, limit: int = 1000, db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
     agent_profiles = crud_get_agent_profiles(db, skip, limit)
     return agent_profiles
 
 
 @router.get("/allprofilesagent/")
-def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
+def read_agent_profiles(skip: int = 0, limit: int = 1000, db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
     agent_profiles = crud_get_profiles_with_agents(db, skip, limit)
     return agent_profiles
 

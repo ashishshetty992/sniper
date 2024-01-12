@@ -32,12 +32,12 @@ def read_agent(agent_id: int, db: Session = Depends(dependencies.get_db) , curre
     return agent
 
 @router.get("/agents/")
-def read_agents(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db) , current_user: User = Depends(get_current_user)):
+def read_agents(skip: int = 0, limit: int = 1000, db: Session = Depends(dependencies.get_db) , current_user: User = Depends(get_current_user)):
     agents = crud_get_agents(db, skip, limit)
     return agents
 
 @router.get("/allagentprofiles/")
-def read_agent_profiles(skip: int = 0, limit: int = 10, db: Session = Depends(dependencies.get_db) , current_user: User = Depends(get_current_user)):
+def read_agent_profiles(skip: int = 0, limit: int = 1000, db: Session = Depends(dependencies.get_db) , current_user: User = Depends(get_current_user)):
     agent_profiles = crud_get_agents_with_profiles(db, skip, limit)
     return agent_profiles
 

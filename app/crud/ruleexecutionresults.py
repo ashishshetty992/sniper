@@ -7,7 +7,7 @@ from app.models.rule import Rule
 from app.models.schedule import Schedule
 import pdb
 
-def get_all_rule_execution_results(db: Session, skip: int = 0, limit: int = 100, rule_id =None, agent_id=None, schedule_id=None):
+def get_all_rule_execution_results(db: Session, skip: int = 0, limit: int = 10000, rule_id =None, agent_id=None, schedule_id=None):
     db_query =  db.query(RuleExecutionResult).options(joinedload(RuleExecutionResult.agent)).options(joinedload(RuleExecutionResult.rule)).options(joinedload(RuleExecutionResult.schedule))
     # pdb.set_trace()
     if (rule_id):

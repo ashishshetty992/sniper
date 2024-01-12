@@ -19,7 +19,7 @@ import pdb
 
 SECRET_KEY = "ASHISH"  # Replace with your own secret key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1000
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
