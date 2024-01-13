@@ -31,7 +31,7 @@ async def schedule_rule_run(schedule: ScheduleCreate,  db:Session = Depends(depe
         raise HTTPException(status_code=400, detail="Failed to schedule rule")
 
 @router.get("/schedules")
-async def fetch_all_schedules(skip: int = 0, limit: int = 10, db:Session = Depends(dependencies.get_db)):
+async def fetch_all_schedules(skip: int = 0, limit: int = 1000, db:Session = Depends(dependencies.get_db)):
     try:
         schedules = get_all_schedules(db, skip, limit)
         return schedules

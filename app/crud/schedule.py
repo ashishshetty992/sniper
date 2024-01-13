@@ -15,5 +15,5 @@ def fetch_all_schedules(db: Session):
 
     return db_schedule
 
-def get_all_schedules(db: Session, skip:int = 0, limit=100):
+def get_all_schedules(db: Session, skip:int = 0, limit=1000):
     return db.query(Schedule).offset(skip).limit(limit).all()
