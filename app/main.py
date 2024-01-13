@@ -99,19 +99,19 @@ def schedule_jobs(db=next(get_db())):
         print("Exception:", e)
 
 
-def generate_ssh_keys_if_not_present():
-    try:
-        # check if ssh keys are present in the .ssh folder
-        isdir = os.path.isdir(SSH_DIRECTORY)
-        isPublicFile = os.path.isfile(PUBLIC_KEY_FILE_PATH)
-        isPrivateFile = os.path.isfile(PRIVATE_KEY_FILE_PATH)
+# def generate_ssh_keys_if_not_present():
+#     try:
+#         # check if ssh keys are present in the .ssh folder
+#         isdir = os.path.isdir(SSH_DIRECTORY)
+#         isPublicFile = os.path.isfile(PUBLIC_KEY_FILE_PATH)
+#         isPrivateFile = os.path.isfile(PRIVATE_KEY_FILE_PATH)
         
-        if (not isdir or not isPublicFile or not isPrivateFile):
-            generate_ssh_key_pairs()
-    except Exception as e:
-        print("Exception:", e)
+#         if (not isdir or not isPublicFile or not isPrivateFile):
+#             generate_ssh_key_pairs()
+#     except Exception as e:
+#         print("Exception:", e)
 
 
 create_default_user_and_role()
-generate_ssh_keys_if_not_present()
+# generate_ssh_keys_if_not_present()
 schedule_jobs()

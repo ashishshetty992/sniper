@@ -1,6 +1,9 @@
 import subprocess
 import os
 from dotenv import load_dotenv
+import paramiko
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def install_mysql():
     try:
@@ -13,7 +16,6 @@ def install_mysql():
 
 def configure_mysql():
     print("Configuring MySQL...")
-    dir_path = os.path.dirname(os.path.realpath(__file__))
     print(dir_path)
     load_dotenv(dir_path+"/setup.env")
     # You can customize these variables according to your needs
@@ -33,6 +35,29 @@ def configure_mysql():
     subprocess.run(f'mysql -u root -p{mysql_root_password} -e "FLUSH PRIVILEGES"', shell=True, check=True)
 
     print("MySQL configuration completed successfully.")
+
+def generate_ssh_key_pairs():
+    key = paramiko.RSAKey.generate(2048)
+    # key.from_private_key(keyout)
+    os.makedirs(dir_path, exist_ok=True)
+    key.write_private_key_file(os.path.join(dir_path, "new_ssh_private_key"))
+    public_key = '{} {}'.format(key.get_name(), key.get_base64())
+    file = open(os.path.join(dir_path, "new_ssh_public_key"), "w")
+    file.write(public_key)
+    file.close()
+
+
+def generate_ssh_keys_if_not_present():
+    try:
+        # check if ssh keys are present in the .ssh folder
+        isdir = os.path.isdir(dir_path)
+        isPublicFile = os.path.isfile("new_ssh_public_key")
+        isPrivateFile = os.path.isfile("new_ssh_private_key")
+        
+        if (not isdir or not isPublicFile or not isPrivateFile):
+            generate_ssh_key_pairs()
+    except Exception as e:
+        print("Exception:", e)
 
 if __name__ == "__main__":
     install_mysql()
