@@ -79,7 +79,7 @@ async def search_files(request: Request):
     hostname = data.get("hostname")
     username = data.get("username")
     extension = data.get("extension")
-    result = ssh_helper.search_file_extension_in_remote(hostname, username, extension)
+    result = ssh_helper.execute_rule_in_remote(hostname, username, extension)
     return {"result":result}
 
 @router.post("/schedule/ssh-key-regeneration")

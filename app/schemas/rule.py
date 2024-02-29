@@ -10,6 +10,7 @@ class RuleBase(BaseModel):
     path:str
 
 class RuleCreate(RuleBase):
+    # exec_rule: str = ""
     pass
 
 class RuleUpdate(BaseModel):

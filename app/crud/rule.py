@@ -1,3 +1,4 @@
+import shutil
 from sqlalchemy.orm import Session
 from app.models.rule import Rule
 from app.schemas.rule import RuleCreate
@@ -6,9 +7,18 @@ from typing import List
 from app.models.agent import Agent
 from app.models.agentprofile import AgentProfile
 import pdb
+import os
 from sqlalchemy.orm import joinedload
 
-def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int]):
+def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], rule_file):
+    # save rule to a folder
+    file_location = f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/setup/files/{rule_file.filename}"
+    os.makedirs(os.path.dirname(file_location), exist_ok=True)
+    with open(file_location, "wb+") as file_object:
+        shutil.copyfileobj(rule_file.file, file_object)
+    rule.exec_rule = file_location
+    
+    # save the path in db
     db_rule = Rule(**rule.dict())
     for agent_id in agent_ids:
         agent = db.query(Agent).filter(Agent.id == agent_id).first()

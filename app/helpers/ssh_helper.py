@@ -185,13 +185,20 @@ def generate_ssh_key_pairs():
     file.close()
 
 
-def search_file_extension_in_remote(hostname, username, extension, remote_path="C:"):
-    print(hostname, username, extension, remote_path)
+def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
+    print(hostname, username, rule_file, remote_path)
     ssh_client = connect_to_agent(hostname, username)
-    
-    print(f"searching files with {extension} extension ....")
 
-    stdin, stdout, stderr = ssh_client.exec_command(f"dir /S /B {remote_path}\\*.{extension}")
+    print(f"Running rule for the agent")
+
+    # copy the rule in agent
+    sftp_client = ssh_client.open_sftp()
+    filename = os.path.basename(rule_file)
+    copy_file_content_to_remote_server(sftp_client, rule_file, filename)
+        
+
+    # run the rule command to search
+    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {filename} {remote_path}")
 
     if(stderr.read().decode() and stderr.read().decode()!=""):
         raise Exception(stderr.read().decode())

@@ -6,7 +6,7 @@ from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, PRIVATE_KEY_
 from app.crud.agent import get_agents_by_profile, get_rules_by_agent
 
 from apscheduler.triggers.cron import CronTrigger
-from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, search_file_extension_in_remote
+from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, execute_rule_in_remote
 from app.models.agent import Agent
 from fastapi import  Depends
 import shutil
@@ -138,7 +138,7 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
     db.expunge(dbschedule)
     try:
         start_time = datetime.now().timestamp()
-        result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
+        result = execute_rule_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
         end_time = datetime.now().timestamp()
         latency = end_time - start_time
         print("saving execution results in db")
