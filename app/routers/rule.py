@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
+from pydantic import Json
 from sqlalchemy.orm import Session
 from app.crud.analytics import get_analytics_data
 from app.crud.rule import create_rule as crud_create_rule
@@ -23,9 +24,9 @@ import pdb
 router = APIRouter()
 
 @router.post("/rules/")
-def create_rule(rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_rule(rule: RuleCreate = Depends(), agent_ids: List[int]=[], agent_profile_ids: List[int]=[], db: Session = Depends(get_db), current_user: User = Depends(get_current_user), rule_file: List[UploadFile] = File(...)):
     current_user_details = get_current_user_details(db, current_user.username)
-    return crud_create_rule(db, rule, agent_ids, agent_profile_ids)
+    return crud_create_rule(db, rule, agent_ids, agent_profile_ids, rule_file)
 
 @router.get("/rules/{rule_id}")
 def read_rule(rule_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

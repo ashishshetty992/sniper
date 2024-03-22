@@ -6,7 +6,7 @@ from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, PRIVATE_KEY_
 from app.crud.agent import get_agents_by_profile, get_rules_by_agent
 
 from apscheduler.triggers.cron import CronTrigger
-from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, search_file_extension_in_remote
+from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, execute_rule_in_remote
 from app.models.agent import Agent
 from fastapi import  Depends
 import shutil
@@ -39,7 +39,6 @@ def ssh_key_generation_job_scheduler(start_date:str, time:list, frequency=None):
     
     print("scheduling ssh key regeneration job")
     trigger =  CronTrigger(second="*/15", start_date=start_date)
-    # pdb.set_trace()
     if (frequency == "week"):
         trigger = CronTrigger(hour=time[0], minute=time[1], second=0, start_date=start_date, day_of_week=0)
     elif (frequency == "month"):
@@ -102,7 +101,6 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
 
 
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
-    # pdb.set_trace()
     if (reference == References.AGENT.value):
         agent = get_rules_by_agent(db, reference_id)
         rules = agent.rules
@@ -138,7 +136,7 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
     db.expunge(dbschedule)
     try:
         start_time = datetime.now().timestamp()
-        result = search_file_extension_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
+        result = execute_rule_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
         end_time = datetime.now().timestamp()
         latency = end_time - start_time
         print("saving execution results in db")
