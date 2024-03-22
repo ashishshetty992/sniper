@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.crud.schedule import fetch_all_schedules
 from app.helpers.jobs import init_scheduler, rule_run_scheduler
-from app.helpers.ssh_helper import generate_ssh_key_pairs
+from app.helpers.ssh_helper import generate_ssh_key_pairs, main
 from app.dependencies import get_db
 from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
 from app.enums import ScheduledStatus 
@@ -94,6 +94,8 @@ def schedule_jobs(db=next(get_db())):
             if job.status != ScheduledStatus.EXECUTED:
                 job.hour = datetime.now().hour
                 job.minutes = datetime.now().minute + 1
+            else:
+                continue
             rule_run_scheduler(job,db)
     except Exception as e:
         print("Exception:", e)

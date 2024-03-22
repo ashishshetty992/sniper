@@ -9,16 +9,21 @@ from app.models.agentprofile import AgentProfile
 import pdb
 import os
 from sqlalchemy.orm import joinedload
+from fastapi import UploadFile
 
-def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], rule_file):
-    # save rule to a folder
-    file_location = f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/setup/files/{rule_file.filename}"
-    os.makedirs(os.path.dirname(file_location), exist_ok=True)
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(rule_file.file, file_object)
-    rule.exec_rule = file_location
+def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], rule_files: List[UploadFile]):
+    # Save rule files to a folder and store their paths
+    file_locations = []
+    for rule_file in rule_files:
+        file_location = f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/setup/files/{rule_file.filename}"
+        os.makedirs(os.path.dirname(file_location), exist_ok=True)
+        with open(file_location, "wb+") as file_object:
+            shutil.copyfileobj(rule_file.file, file_object)
+        file_locations.append(file_location)
     
-    # save the path in db
+    # Update exec_rule to store multiple file paths
+    rule.exec_rule =  ",".join(file_locations)
+    # Save the rule in the database
     db_rule = Rule(**rule.dict())
     for agent_id in agent_ids:
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
@@ -28,10 +33,13 @@ def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profi
         agent_profile = db.query(AgentProfile).filter(AgentProfile.id == agent_profile_id).first()
         if agent_profile:
             db_rule.agent_profiles.append(agent_profile)
+    print("rule create multiple files")
     db.add(db_rule)
     db.commit()
     db.refresh(db_rule)
+    
     return db_rule
+
 
 def update_rule(db: Session, rule_id: int, rule_update: RuleUpdate, agent_ids: List[int], agent_profile_ids: List[int]):
     db_rule = db.query(Rule).filter(Rule.id == rule_id).first()

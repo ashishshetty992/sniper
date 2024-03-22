@@ -24,8 +24,7 @@ import pdb
 router = APIRouter()
 
 @router.post("/rules/")
-def create_rule(rule: RuleCreate = Depends(), agent_ids: List[int]=[], agent_profile_ids: List[int]=[], db: Session = Depends(get_db), current_user: User = Depends(get_current_user), rule_file:UploadFile = File(...)):
-    # pdb.set_trace()
+def create_rule(rule: RuleCreate = Depends(), agent_ids: List[int]=[], agent_profile_ids: List[int]=[], db: Session = Depends(get_db), current_user: User = Depends(get_current_user), rule_file: List[UploadFile] = File(...)):
     current_user_details = get_current_user_details(db, current_user.username)
     return crud_create_rule(db, rule, agent_ids, agent_profile_ids, rule_file)
 

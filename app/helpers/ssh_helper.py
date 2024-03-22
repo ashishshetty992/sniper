@@ -31,7 +31,7 @@ def make_ssh_connection(hostname,username, password=None, port=22):
         sftp_client = ssh_client.open_sftp()
         
         #copy public key to remote server
-        copy_file_content_to_remote_server(sftp_client, PUBLIC_KEY_FILE_PATH, "administrators_authorized_keys", "C:\ProgramData\ssh")
+        copy_file_content_to_remote_server(sftp_client, PUBLIC_KEY_FILE_PATH, "administrators_authorized_keys", "C:\ProgramData\ssh", 'w')
         
         #command to give certain permission and restriction for authorized keys
         #TO DO fetch the path without hardoding
@@ -112,7 +112,7 @@ def copy_file_to_server(sftp_client, local_file_path, remote_file_path, director
         raise Exception(f"Failed to copy file to server with error : {e}")
 
 
-def copy_file_content_to_remote_server(sftp_client, local_file_path, remote_file_name, directory=None):
+def copy_file_content_to_remote_server(sftp_client, local_file_path, remote_file_name, directory=None, mode='a'):
     """Copy file content from local to remote server
 
     :param sftp_client: SFTP client
@@ -127,11 +127,15 @@ def copy_file_content_to_remote_server(sftp_client, local_file_path, remote_file
     try:
         print(f"copying {local_file_path} to {remote_file_name}")
         if(directory):
-            sftp_client.chdir(directory)
+            try:
+                sftp_client.chdir(directory)
+            except IOError:
+                sftp_client.mkdir(directory)  # Create remote_path
+                sftp_client.chdir(directory)
         if(not local_file_path or not remote_file_name):
             raise Exception("Please ensure both local_file_path and remote_file_path is provided")
         
-        with sftp_client.file(remote_file_name, 'a') as remote_file:
+        with sftp_client.file(remote_file_name, mode) as remote_file:
                 # Read the content of the local file
                 with open(local_file_path, 'r') as local_file:
                     content = local_file.read()
@@ -180,7 +184,7 @@ def generate_ssh_key_pairs():
     os.makedirs(SSH_DIRECTORY, exist_ok=True)
     key.write_private_key_file(PRIVATE_KEY_FILE_PATH)
     public_key = '{} {}'.format(key.get_name(), key.get_base64())
-    file = open(PUBLIC_KEY_FILE_PATH, "w")
+    file = open(PUBLIC_KEY_FILE_PATH)
     file.write(public_key)
     file.close()
 
@@ -194,30 +198,34 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     # copy the rule in agent
     sftp_client = ssh_client.open_sftp()
     filename = os.path.basename(rule_file)
-    copy_file_content_to_remote_server(sftp_client, rule_file, filename)
-        
 
+    copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
+
+    rule_path = f"C:\ProgramData\\rules\\{filename}"
     # run the rule command to search
-    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {filename} {remote_path}")
+    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {rule_path} {remote_path}")
+    error = stderr.read().decode() 
+    # print("error", len(stderr.read().decode()))
 
-    if(stderr.read().decode() and stderr.read().decode()!=""):
-        raise Exception(stderr.read().decode())
+    if(error and error != ""):
+        print("error", error)
+        result = error
+        return result
     
     result = [file.replace("\r\n","") for file in iter(stdout.readline, "")]
     print("Output:", result)
     return result
         
    
-def main():
+def main(host_name, user_name, password):
     """Driver function to make connection with remote agents
     """
-    print("arguments are: ", sys.argv)
-    for i in range(1, len(sys.argv)):
-        host_name, user_name, password = sys.argv[i].split(',')
-        
-        if(not host_name or not user_name or not password):
-            print(f"""Invalid inputs in {i} position. Ensure that host_name,user_name,password is given correctly.
-            EX: python script.py '192.168.0.105','admin','admin123'""")
-            continue
-   
-        make_ssh_connection(host_name, user_name, password)
+    # print("arguments are: ", sys.argv)
+    # for i in range(1, len(sys.argv)):
+    # host_name, user_name, password = sys.argv[i].split(',')
+    
+    if(not host_name or not user_name or not password):
+        print(f"""Invalid inputs in {i} position. Ensure that host_name,user_name,password is given correctly.
+        EX: python script.py '192.168.0.105','admin','admin123'""")
+
+    make_ssh_connection(host_name, user_name, password)

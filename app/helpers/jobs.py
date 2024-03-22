@@ -39,7 +39,6 @@ def ssh_key_generation_job_scheduler(start_date:str, time:list, frequency=None):
     
     print("scheduling ssh key regeneration job")
     trigger =  CronTrigger(second="*/15", start_date=start_date)
-    # pdb.set_trace()
     if (frequency == "week"):
         trigger = CronTrigger(hour=time[0], minute=time[1], second=0, start_date=start_date, day_of_week=0)
     elif (frequency == "month"):
@@ -102,7 +101,6 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
 
 
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
-    # pdb.set_trace()
     if (reference == References.AGENT.value):
         agent = get_rules_by_agent(db, reference_id)
         rules = agent.rules

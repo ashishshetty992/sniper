@@ -1,7 +1,6 @@
 from typing import List
 from app.models.role import Role  # Import the Role model
 from pydantic import BaseModel, BaseConfig
-from typing import List
 from typing import Union
 
 
