@@ -10,14 +10,16 @@ class RuleExecutionResult(Base):
     __tablename__ = "rule_execution_result"
 
     id = Column(Integer, primary_key=True, index=True)
-    results = Column(TEXT)
+    file_name = Column(String(255))
+    scanned_file = Column(String(255))
+    rule_name = Column(String(255))
+    severity = Column(String(255))
+    details = Column(TEXT)
     latency = Column(Integer, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     status = Column(String(255), index=True)
     # Add a reference to the Agents that are associated with this profile
     agent = relationship("Agent", secondary="agent_rule_exec_association")
-
     rule = relationship("Rule", secondary="rule_to_rule_exec_association")
-
     schedule = relationship("Schedule", secondary="schedule_rule_exec_association")

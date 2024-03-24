@@ -11,7 +11,7 @@ import os
 from sqlalchemy.orm import joinedload
 from fastapi import UploadFile
 
-def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int], agent_profile_ids: List[int], rule_files: List[UploadFile]):
+def create_rule(db: Session, rule: RuleCreate, agent_ids: List[int]=[], agent_profile_ids: List[int]=[], rule_files: List[UploadFile]=[]):
     # Save rule files to a folder and store their paths
     file_locations = []
     for rule_file in rule_files:

@@ -16,6 +16,7 @@ from app.models.schedule import Schedule
 from datetime import datetime
 
 import pdb
+import re
 
 from app.models.rule import Rule
 from app.crud.agentprofile import get_agent_profile
@@ -135,23 +136,55 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
     db.commit()
     db.expunge(dbschedule)
     try:
-        start_time = datetime.now().timestamp()
-        result = execute_rule_in_remote(agent.ip_address, agent.name, rule.exec_rule, rule.path)
-        end_time = datetime.now().timestamp()
-        latency = end_time - start_time
-        print("saving execution results in db")
-        db_result = RuleExecutionResult(results=str(result), latency=latency, agent=[agent], rule=[rule], schedule=[dbschedule], status='success')
-        db.add(db_result)
-        db.commit()
-        db.refresh(db_result)
+        rule_files = rule.exec_rule.split(',')
+        print("rule_files--->",rule_files)
+        for file in rule_files:
+            start_time = datetime.now().timestamp()
+            result = []
+            try:
+                result = execute_rule_in_remote(agent.ip_address, agent.name, file, rule.path)
+            except Exception as e:
+                db_result = RuleExecutionResult(details=str(e), agent=[agent], rule=[rule], schedule=[dbschedule], status='failed')
+                db.add(db_result)
+                db.commit()
+                db.refresh(db_result)
+            end_time = datetime.now().timestamp()
+            latency = end_time - start_time
+            for res in result:
+                details = res
+                splitted_result = parse_result(res)
+                file_name = file
+                rule_name = splitted_result[0]
+                severity = splitted_result[1]
+                scanned_file = splitted_result[2]
+                print("saving execution results in db")
+                db_result = RuleExecutionResult(details=str(details), latency=latency, agent=[agent], rule=[rule], schedule=[dbschedule], status='success', file_name=file_name, rule_name=rule_name, severity=severity, scanned_file=scanned_file)
+                db.add(db_result)
+                db.commit()
+                db.refresh(db_result)
+            dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
+            dbschedule.status = ScheduledStatus.EXECUTED.value
+            dbschedule.result = str(result)
+            db.add(dbschedule)
+            db.commit()
     except Exception as e:
-        db_result = RuleExecutionResult(results=str(e), agent=[agent], rule=[rule], schedule=[dbschedule], status='failed')
+        db_result = RuleExecutionResult(details=str(e), agent=[agent], rule=[rule], schedule=[dbschedule], status='failed')
         db.add(db_result)
         db.commit()
         db.refresh(db_result)
-
-    dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
-    dbschedule.status = ScheduledStatus.EXECUTED.value
-    db.add(dbschedule)
-    db.commit()
     return db_result
+
+
+def parse_result(data):
+    # Using regular expression to split the string
+    match =re.match(r'(\S+)\s+\[.*?severity="(\w+)"\]\s+(.*)', data)
+    if match:
+        part1 = match.group(1)
+        part2 = match.group(2)
+        part3 = match.group(3)
+    else:
+        part1 = ""
+        part2 = ""
+        part3 = ""
+
+    return [part1, part2, part3]

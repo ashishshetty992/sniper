@@ -16,6 +16,7 @@ from app.crud.user import Crud
 
 from app.schemas.user import UserCreate
 from app.schemas.role import RoleCreate
+from setup.setup import generate_ssh_keys_if_not_present
 
 app = FastAPI()
 
@@ -117,3 +118,4 @@ def schedule_jobs(db=next(get_db())):
 create_default_user_and_role()
 # generate_ssh_keys_if_not_present()
 schedule_jobs()
+generate_ssh_keys_if_not_present()

@@ -1,5 +1,5 @@
 # models/rule.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import TEXT, Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
@@ -19,5 +19,6 @@ class Schedule(Base):
     reference = Column(String(255))
     reference_id = Column(String(255))
     status = Column(String(255), default=ScheduledStatus.CREATED.value)
+    result = Column(TEXT)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)

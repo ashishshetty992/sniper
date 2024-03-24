@@ -37,6 +37,9 @@ def make_ssh_connection(hostname,username, password=None, port=22):
         #TO DO fetch the path without hardoding
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/scripts/setPermissionToAdminAuthKey.ps1"
         set_permissions_to_remote_ssh_key(sftp_client, ssh_client, dir_path, "setPermissionToAdminAuthKey.ps1")
+        sftp_client.chdir(None)
+        copy_file_content_to_remote_server(sftp_client, PUBLIC_KEY_FILE_PATH, "authorized_keys", f"C:\\Users\\{username}\\.ssh", 'w')
+        set_permissions_to_remote_ssh_key(sftp_client, ssh_client, dir_path, "setPermissionToAdminAuthKey.ps1")
         
         #close connection using password authentication
         ssh_client.close()
@@ -127,6 +130,7 @@ def copy_file_content_to_remote_server(sftp_client, local_file_path, remote_file
     try:
         print(f"copying {local_file_path} to {remote_file_name}")
         if(directory):
+            print("directory: ", directory)
             try:
                 sftp_client.chdir(directory)
             except IOError:
@@ -136,11 +140,13 @@ def copy_file_content_to_remote_server(sftp_client, local_file_path, remote_file
             raise Exception("Please ensure both local_file_path and remote_file_path is provided")
         
         with sftp_client.file(remote_file_name, mode) as remote_file:
+                print("inside")
                 # Read the content of the local file
                 with open(local_file_path, 'r') as local_file:
                     content = local_file.read()
                 remote_file.write('\n' + content)
         print(f"Content from {local_file_path} appended to {remote_file_name}")
+        # sftp_client.chdir(None)
     except Exception as e:
         raise Exception(f"Failed to copy file to server with error : {e}")
 
@@ -202,15 +208,15 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
 
     rule_path = f"C:\ProgramData\\rules\\{filename}"
+    print("remote_path--->", remote_path)
     # run the rule command to search
-    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {rule_path} {remote_path}")
+    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {rule_path} \"{(remote_path)}\" ")
     error = stderr.read().decode() 
     # print("error", len(stderr.read().decode()))
 
     if(error and error != ""):
         print("error", error)
-        result = error
-        return result
+        raise Exception(error)
     
     result = [file.replace("\r\n","") for file in iter(stdout.readline, "")]
     print("Output:", result)

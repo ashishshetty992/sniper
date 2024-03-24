@@ -51,8 +51,8 @@ def generate_ssh_keys_if_not_present():
     try:
         # check if ssh keys are present in the .ssh folder
         isdir = os.path.isdir(dir_path)
-        isPublicFile = os.path.isfile("new_ssh_public_key")
-        isPrivateFile = os.path.isfile("new_ssh_private_key")
+        isPublicFile = os.path.isfile(f"{dir_path}/new_ssh_public_key")
+        isPrivateFile = os.path.isfile(f"{dir_path}/new_ssh_private_key")
         
         if (not isdir or not isPublicFile or not isPrivateFile):
             generate_ssh_key_pairs()
