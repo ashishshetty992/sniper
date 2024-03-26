@@ -50,9 +50,9 @@ def read_rules_by_agent(agentprofile_id: int, db: Session = Depends(dependencies
 
 
 @router.put("/agentprofiles/{agent_profile_id}")
-def update_agent_profile(agentprofile_id: int, agent_profile_update: AgentProfileUpdate,  agent_ids: List[int], db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user)):
+def update_agent_profile(agentprofile_id: int, agent_profile_update: AgentProfileUpdate,  agent_ids: List[int], db: Session = Depends(dependencies.get_db), current_user: User = Depends(get_current_user), rule_ids: List[int]=[]):
     try:
-        return crud_update_agent_profile(db, agentprofile_id, agent_profile_update, agent_ids)
+        return crud_update_agent_profile(db, agentprofile_id, agent_profile_update, agent_ids, rule_ids)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

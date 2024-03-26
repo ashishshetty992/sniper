@@ -92,11 +92,9 @@ def schedule_jobs(db=next(get_db())):
         print("scheduling all pending jobs")
         jobs = fetch_all_schedules(db)
         for job in jobs:
-            if job.status != ScheduledStatus.EXECUTED:
+            if (job.status != ScheduledStatus.EXECUTED.value):
                 job.hour = datetime.now().hour
                 job.minutes = datetime.now().minute + 1
-            else:
-                continue
             rule_run_scheduler(job,db)
     except Exception as e:
         print("Exception:", e)

@@ -3,7 +3,7 @@ from app.schemas.schedule import ScheduleCreate
 from apscheduler.schedulers.background import BackgroundScheduler
 import paramiko
 from app.config import PRIVATE_KEY_FILE_NAME, PUBLIC_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
-from app.crud.agent import get_agents_by_profile, get_rules_by_agent
+from app.crud.agent import get_agent, get_agents_by_profile, get_rules_by_agent
 
 from apscheduler.triggers.cron import CronTrigger
 from app.helpers.ssh_helper import generate_ssh_key_pairs, connect_to_agent, copy_file_content_to_remote_server, execute_rule_in_remote
@@ -20,8 +20,10 @@ import re
 
 from app.models.rule import Rule
 from app.crud.agentprofile import get_agent_profile
-from app.crud.rule import get_all_agents_and_rule_by_rule_id
+from app.crud.rule import get_all_agents_and_rule_by_rule_id, get_rule
 from app.models.rule_execution_result import RuleExecutionResult
+from app import dependencies
+from app.database import SessionLocal
 
 
 scheduler = BackgroundScheduler()
@@ -98,7 +100,7 @@ def rule_run_scheduler(schedule:Schedule, db:Session):
     [agents, rules] = get_agents_and_rules_reference_id(db, schedule.reference, schedule.reference_id)
     print(f"fetched rules and agentsfor reference_id : {schedule.reference_id}, reference: {schedule.reference}, agent:{agents}")
     for agent in agents:
-        schedule_rules_for_agent(db, agent, rules, trigger, schedule.id)
+        schedule_rules_for_agent(db, agent.id, rules, trigger, schedule.id)
 
 
 def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:int):
@@ -118,23 +120,25 @@ def get_agents_and_rules_reference_id(db:Session, reference:str, reference_id:in
     return [agents, rules]
 
 
-def schedule_rules_for_agent(db:Session, agent:Agent, rules:list[Rule], trigger:CronTrigger, schedule_id:int):
-    for rule in rules:
-        print(f"scheduling rule for agent {agent.id} and rule : {rule.id}")
-        scheduler.add_job(rule_execution_job, trigger, [db, agent, rule, schedule_id])
+def schedule_rules_for_agent(db:Session, agent_id:int, rules:list[Rule], trigger:CronTrigger, schedule_id:int):
     dbschedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     dbschedule.status = ScheduledStatus.SCHEDULED.value
     db.add(dbschedule)
-    db.expire_on_commit = False
+    for rule in rules:
+        print(f"scheduling rule for agent {agent_id} and rule : {rule.id}")
+        scheduler.add_job(rule_execution_job, trigger, [agent_id, rule.id, schedule_id])
     db.commit()
 
-def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
+def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
+    db = SessionLocal()
+    agent = get_agent(db, agent_id)
+    rule = get_rule(db, rule_id)
     print(f"running rule for agent id : {agent.id} rule: {rule.id}")
     dbschedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     dbschedule.status = ScheduledStatus.RUNNING.value
     db.add(dbschedule)
+    db.expire_on_commit=False
     db.commit()
-    db.expunge(dbschedule)
     try:
         rule_files = rule.exec_rule.split(',')
         print("rule_files--->",rule_files)
@@ -164,7 +168,6 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
                 db.refresh(db_result)
             dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
             dbschedule.status = ScheduledStatus.EXECUTED.value
-            dbschedule.result = str(result)
             db.add(dbschedule)
             db.commit()
     except Exception as e:
@@ -172,6 +175,7 @@ def rule_execution_job(db:Session, agent:Agent, rule:Rule, schedule_id:int):
         db.add(db_result)
         db.commit()
         db.refresh(db_result)
+    db.expunge(dbschedule)
     return db_result
 
 

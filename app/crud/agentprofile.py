@@ -6,6 +6,8 @@ from app.schemas.agentprofile import AgentProfileUpdate
 from typing import List
 from sqlalchemy.orm import joinedload
 
+from app.models.rule import Rule
+
 def create_agent_profile(db: Session, agent_profile: AgentProfileCreate, agent_ids: List[int]):
     db_agent_profile = AgentProfile(**agent_profile.dict())
     for agent_id in agent_ids:
@@ -51,20 +53,25 @@ def get_agents_by_profile_id(db: Session, profile_id: int):
     return None
 
 
-def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProfileUpdate, agent_ids: List[int]):
+def update_agent_profile(db: Session, profile_id: int, profile_update: AgentProfileUpdate, agent_ids: List[int], rule_ids:List[int]=[]):
     db_agent_profile = db.query(AgentProfile).filter(AgentProfile.id == profile_id).filter(AgentProfile.active ==True).first()
 
     if db_agent_profile:
         for key, value in profile_update.dict().items():
             setattr(db_agent_profile, key, value)
 
-        # Clear existing agents and add new ones
+        # Clear existing and add new ones
         db_agent_profile.agents = []
         for agent_id in agent_ids:
             agent = db.query(Agent).filter(Agent.id == agent_id).filter(AgentProfile.active ==True).first()
             if agent:
                 db_agent_profile.agents.append(agent)
-
+        
+        if rule_ids: db_agent_profile.rules = []
+        for rule_id in rule_ids:
+            rule = db.query(Rule).filter(Rule.id == rule_id).filter(AgentProfile.active ==True).first()
+            if rule:
+                db_agent_profile.rules.append(rule)
         db.commit()
         db.refresh(db_agent_profile)
 
