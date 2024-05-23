@@ -59,6 +59,6 @@ def generate_ssh_keys_if_not_present():
     except Exception as e:
         print("Exception:", e)
 
-if __name__ == "__main__":
-    install_mysql()
-    configure_mysql()
+# if __name__ == "__main__":
+#     # install_mysql()
+#     # configure_mysql()

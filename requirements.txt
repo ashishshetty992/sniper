@@ -3,9 +3,7 @@ db==0.1.1
 fastapi==0.100.1
 scraper==0.1.0
 SQLAlchemy==2.0.3
-uvicorn==0.23.2
 pydantic==2.5.2
-python-dotenv==1.0.0
 alembic==1.11.1
 mysql-connector-python==8.0.33
 bs4==0.0.1
@@ -18,5 +16,4 @@ APScheduler==3.10.4
 python-jose==3.3.0
 mysqlclient==2.2.1
 uvicorn==0.29.0
-SQLAlchemy==2.0.28
 python-dotenv==1.0.1
