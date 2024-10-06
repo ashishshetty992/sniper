@@ -19,7 +19,7 @@ def configure_mysql():
     print(dir_path)
     load_dotenv(dir_path+"/setup.env")
     # You can customize these variables according to your needs
-    mysql_root_password = os.getenv('MYSQL_ROOT_PASSWORD') or "root_password"
+    mysql_root_password = os.getenv('MYSQL_PASSWORD') or "root_password"
     mysql_database = os.getenv("MYSQL_DATABASE") or "my_database"
     mysql_user = os.getenv("MYSQL_USER_NAME") or "mysql_user"
     mysql_user_password = os.getenv("MYSQL_USER_PASSWORD") or "mysql_password"
@@ -61,4 +61,4 @@ def generate_ssh_keys_if_not_present():
 
 # if __name__ == "__main__":
 #     # install_mysql()
-#     # configure_mysql()
+    # configure_mysql()
