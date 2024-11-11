@@ -13,6 +13,7 @@ from app.enums import ScheduledStatus
 from datetime import datetime
 from app.crud.role import get_roles
 from app.crud.user import Crud
+from app.seeder import seed_data
 
 from app.schemas.user import UserCreate
 from app.schemas.role import RoleCreate
@@ -83,6 +84,8 @@ def create_default_user_and_role(db=next(get_db())):
 
 # Create tables in the database
 Base.metadata.create_all(bind=engine)
+print("SEEDING DATA")
+# seed_data()
 
 init_scheduler()
 
