@@ -5,6 +5,7 @@ import sys
 import paramiko
 import stat
 import pdb
+import json
 
 from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
 
@@ -205,24 +206,40 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     sftp_client = ssh_client.open_sftp()
     filename = os.path.basename(rule_file)
 
+    # First, copy test_yara_agent.py to the remote machine
+    agent_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_yara_agent.py")
+    copy_file_content_to_remote_server(sftp_client, agent_script, "test_yara_agent.py", "C:\ProgramData\\rules", "w")
+    
+    # Then copy the rule file
     copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
 
     rule_path = f"C:\ProgramData\\rules\\{filename}"
+    agent_path = "C:\ProgramData\\rules\\test_yara_agent.py"
     print("remote_path--->", remote_path)
-    # run the rule command to search
-    stdin, stdout, stderr = ssh_client.exec_command(f"yara -m {rule_path} \"{(remote_path)}\" ")
+    
+    # Run the Python script
+    print(f"Executing command: python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
+    stdin, stdout, stderr = ssh_client.exec_command(f"python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
     error = stderr.read().decode() 
-    # print("error", len(stderr.read().decode()))
 
-    if(error and error != ""):
+    if error and error != "":
         print("error", error)
         raise Exception(error)
     
-    result = [file.replace("\r\n","") for file in iter(stdout.readline, "")]
-    print("Output:", result)
-    return result
-        
-   
+    # Process JSON results
+    results = []
+    for line in stdout:
+        try:
+            result = json.loads(line.strip())
+            results.append(result)
+        except json.JSONDecodeError as e:
+            print(f"Warning: Could not parse line as JSON: {line}")
+            continue
+
+    print("Output:", results)
+    return results
+
+
 def main(host_name, user_name, password):
     """Driver function to make connection with remote agents
     """
