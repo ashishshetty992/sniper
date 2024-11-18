@@ -131,6 +131,7 @@ def schedule_rules_for_agent(db:Session, agent_id:int, rules:list[Rule], trigger
 
 def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
     db = SessionLocal()
+    db_result = None
     agent = get_agent(db, agent_id)
     rule = get_rule(db, rule_id)
     print(f"running rule for agent id : {agent.id} rule: {rule.id}")
@@ -147,6 +148,8 @@ def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
             result = []
             try:
                 result = execute_rule_in_remote(agent.ip_address, agent.name, file, rule.path)
+                print("running rule on agent")
+                print("result from agent with yara_scan--->", result)
             except Exception as e:
                 db_result = RuleExecutionResult(details=str(e), agent=[agent], rule=[rule], schedule=[dbschedule], status='failed')
                 db.add(db_result)
@@ -154,18 +157,29 @@ def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
                 db.refresh(db_result)
             end_time = datetime.now().timestamp()
             latency = end_time - start_time
-            for res in result:
-                details = res
-                splitted_result = parse_result(res)
-                file_name = file
-                rule_name = splitted_result[0]
-                severity = splitted_result[1]
-                scanned_file = splitted_result[2]
-                print("saving execution results in db")
-                db_result = RuleExecutionResult(details=str(details), latency=latency, agent=[agent], rule=[rule], schedule=[dbschedule], status='success', file_name=file_name, rule_name=rule_name, severity=severity, scanned_file=scanned_file)
-                db.add(db_result)
-                db.commit()
-                db.refresh(db_result)
+            if isinstance(result, dict) and result["status"] in ["success", "partial_success"]:
+                for match in result.get("matches", []):
+                    details = json.dumps(match)
+                    file_name = file
+                    rule_name = os.path.basename(file)  # Use the rule file name
+                    severity = "low"  # You might want to extract this from match data
+                    scanned_file = match["file"]
+                    print("saving execution results in db")
+                    db_result = RuleExecutionResult(
+                        details=details,
+                        latency=latency,
+                        status='success',
+                        file_name=file_name,
+                        rule_name=rule_name,
+                        severity=severity,
+                        scanned_file=scanned_file
+                    )
+                    db_result.agent.append(agent)
+                    db_result.rule.append(rule)
+                    db_result.schedule.append(dbschedule)
+                    db.add(db_result)
+                    db.commit()
+                    db.refresh(db_result)
             dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
             dbschedule.status = ScheduledStatus.EXECUTED.value
             db.add(dbschedule)

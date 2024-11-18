@@ -207,14 +207,14 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     filename = os.path.basename(rule_file)
 
     # First, copy test_yara_agent.py to the remote machine
-    agent_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_yara_agent.py")
-    copy_file_content_to_remote_server(sftp_client, agent_script, "test_yara_agent.py", "C:\ProgramData\\rules", "w")
+    # agent_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_yara_agent.py")
+    # copy_file_content_to_remote_server(sftp_client, agent_script, "test_yara_agent.py", "C:\ProgramData\\rules", "w")
     
     # Then copy the rule file
     copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
 
     rule_path = f"C:\ProgramData\\rules\\{filename}"
-    agent_path = "C:\ProgramData\\rules\\test_yara_agent.py"
+    agent_path = "C:\ProgramData\\rules\\yara_scan.py"
     print("remote_path--->", remote_path)
     
     # Run the Python script
@@ -222,23 +222,91 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     stdin, stdout, stderr = ssh_client.exec_command(f"python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
     error = stderr.read().decode() 
 
-    if error and error != "":
-        print("error", error)
-        raise Exception(error)
+    # if error and error != "":
+    #     print("error", error)
+    #     raise Exception(error)
     
-    # Process JSON results
-    results = []
+    # results = []
+    # for line in stdout:
+    #     try:
+    #         result = json.loads(line.strip())
+    #         results.append(result)
+    #     except json.JSONDecodeError as e:
+    #         print(f"Warning: Could not parse line as JSON: {line}")
+    #         continue
+
+    # print("Output:", results)
+    # return results
+    # Process results with enhanced analytics
+    scan_results = []
+    summary = None
+    errors = []
+    
+    # Read and process each line of output
     for line in stdout:
         try:
             result = json.loads(line.strip())
-            results.append(result)
-        except json.JSONDecodeError as e:
-            print(f"Warning: Could not parse line as JSON: {line}")
+            if result["status"] == "summary":
+                summary = result
+            elif result["status"] == "error":
+                errors.append(result)
+            else:
+                scan_results.append(result)
+        except json.JSONDecodeError:
+            print(f"Warning: Invalid JSON output: {line.strip()}")
             continue
 
-    print("Output:", results)
-    return results
+    # Check for execution errors
+    error = stderr.read().decode()
+    if error and error != "":
+        print("SSH execution error:", error)
+        raise Exception(error)
 
+    # Prepare enhanced response
+    response = {
+        "agent_ip": ip_address,
+        "scan_path": remote_path,
+        "rule_path": rule_path,
+        "execution_time": summary["timing"]["total_time_seconds"] if summary else None,
+        "stats": {
+            "total_files": summary["scan_stats"]["total_files"] if summary else 0,
+            "scanned_files": summary["scan_stats"]["scanned_files"] if summary else 0,
+            "files_with_matches": summary["scan_stats"]["files_with_matches"] if summary else 0,
+            "error_files": summary["scan_stats"]["error_files"] if summary else 0,
+            "success_rate": summary["scan_stats"]["success_rate"] if summary else 0
+        },
+        "performance": {
+            "files_per_second": summary["timing"]["files_per_second"] if summary else 0,
+            "average_scan_time": summary["timing"]["average_scan_time"] if summary else 0,
+            "total_size_scanned": summary["file_stats"]["total_size_bytes"] if summary else 0
+        },
+        "matches": [
+            {
+                "file": result["file"],
+                "matches": result["matches"],
+                "scan_time": result["scan_time"],
+                "file_size": result["file_size"]
+            }
+            for result in scan_results
+            if result["status"] == "success" and result["matches"]
+        ],
+        "errors": [
+            {
+                "file": error["file"],
+                "error_type": error.get("error_type", "Unknown"),
+                "message": error["message"]
+            }
+            for error in errors
+        ],
+        "rule_analysis": summary["rule_matches"]["matches_by_rule"] if summary else {},
+        "file_types": summary["file_stats"]["file_types"] if summary else {},
+        "status": "success" if not errors else "partial_success" if scan_results else "failed",
+        "timestamp": datetime.now().isoformat()
+    }
+
+    print("Response:")
+    print(json.dumps(response, indent=4))
+    return response
 
 def main(host_name, user_name, password):
     """Driver function to make connection with remote agents

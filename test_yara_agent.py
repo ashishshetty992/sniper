@@ -68,6 +68,17 @@ def main():
         rules_path = sys.argv[1]
         scan_path = sys.argv[2]
 
+        # write the paths in a file
+        with open("paths.txt", "w") as f:
+            f.write(f"rules_path: {rules_path}\nscan_path: {scan_path}")
+
+        # Read the paths from the file
+        with open("paths.txt", "r") as f:
+            paths = f.read().splitlines()
+            rules_path = paths[0].split(": ")[1]
+            scan_path = paths[1].split(": ")[1]
+
+
         # Validate paths
         if not os.path.exists(rules_path):
             result = {
