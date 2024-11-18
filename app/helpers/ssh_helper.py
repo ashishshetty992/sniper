@@ -264,7 +264,7 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
 
     # Prepare enhanced response
     response = {
-        "agent_ip": ip_address,
+        "agent_ip": hostname,
         "scan_path": remote_path,
         "rule_path": rule_path,
         "execution_time": summary["timing"]["total_time_seconds"] if summary else None,
