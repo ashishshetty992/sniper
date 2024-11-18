@@ -6,6 +6,7 @@ import paramiko
 import stat
 import pdb
 import json
+from datetime import datetime
 
 from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
 
@@ -241,6 +242,7 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     scan_results = []
     summary = None
     errors = []
+    info_messages = []
     
     # Read and process each line of output
     for line in stdout:
@@ -250,6 +252,8 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
                 summary = result
             elif result["status"] == "error":
                 errors.append(result)
+            elif result["status"] == "info":
+                info_messages.append(result["message"])
             else:
                 scan_results.append(result)
         except json.JSONDecodeError:
@@ -268,6 +272,7 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
         "scan_path": remote_path,
         "rule_path": rule_path,
         "execution_time": summary["timing"]["total_time_seconds"] if summary else None,
+        "info_messages": info_messages,  
         "stats": {
             "total_files": summary["scan_stats"]["total_files"] if summary else 0,
             "scanned_files": summary["scan_stats"]["scanned_files"] if summary else 0,

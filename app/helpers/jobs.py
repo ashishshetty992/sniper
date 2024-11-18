@@ -24,7 +24,8 @@ from app.crud.rule import get_all_agents_and_rule_by_rule_id, get_rule
 from app.models.rule_execution_result import RuleExecutionResult
 from app import dependencies
 from app.database import SessionLocal
-
+import json
+import os
 
 scheduler = BackgroundScheduler()
 
@@ -157,22 +158,28 @@ def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
                 db.refresh(db_result)
             end_time = datetime.now().timestamp()
             latency = end_time - start_time
-            if isinstance(result, dict) and result["status"] in ["success", "partial_success"]:
-                for match in result.get("matches", []):
-                    details = json.dumps(match)
+            if isinstance(result, dict):
+                # Save result for successful scans, even if no matches
+                if result["status"] in ["success", "partial_success"]:
                     file_name = file
-                    rule_name = os.path.basename(file)  # Use the rule file name
-                    severity = "low"  # You might want to extract this from match data
-                    scanned_file = match["file"]
-                    print("saving execution results in db")
+                    rule_name = os.path.basename(file)
+                    details = json.dumps({
+                        "scan_stats": result["stats"],
+                        "performance": result["performance"],
+                        "matches": result.get("matches", []),
+                        "info_messages": result.get("info_messages", []),
+                        "file_types": result.get("file_types", {}),
+                        "execution_time": result["execution_time"]
+                    })
+                    
                     db_result = RuleExecutionResult(
                         details=details,
                         latency=latency,
-                        status='success',
+                        status=result["status"],
                         file_name=file_name,
                         rule_name=rule_name,
-                        severity=severity,
-                        scanned_file=scanned_file
+                        severity="info",  # Default severity when no matches
+                        scanned_file=result["scan_path"]
                     )
                     db_result.agent.append(agent)
                     db_result.rule.append(rule)
@@ -180,6 +187,26 @@ def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
                     db.add(db_result)
                     db.commit()
                     db.refresh(db_result)
+
+                    # If there are matches, save additional entries for each match
+                    for match in result.get("matches", []):
+                        match_details = json.dumps(match)
+                        severity = "low"  # You might want to extract this from match data
+                        match_db_result = RuleExecutionResult(
+                            details=match_details,
+                            latency=latency,
+                            status='match_found',
+                            file_name=file_name,
+                            rule_name=rule_name,
+                            severity=severity,
+                            scanned_file=match["file"]
+                        )
+                        match_db_result.agent.append(agent)
+                        match_db_result.rule.append(rule)
+                        match_db_result.schedule.append(dbschedule)
+                        db.add(match_db_result)
+                        db.commit()
+                        db.refresh(match_db_result)
             dbschedule = db.query(Schedule).filter(Schedule.id == dbschedule.id).first()
             dbschedule.status = ScheduledStatus.EXECUTED.value
             db.add(dbschedule)
