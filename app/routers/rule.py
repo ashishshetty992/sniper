@@ -67,6 +67,51 @@ def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(ge
         raise HTTPException(status_code=404, detail="Analytics Not found")
     return data
 
+@router.post("/rules/{rule_id}/scan")
+async def scan_rule(
+    rule_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Immediately execute a rule on all associated agents
+    """
+    from app.helpers.jobs import rule_execution_job
+    from app.crud.rule import get_rules_with_agents_and_profile_by_rule_id
+    
+    # Get rule and its agents
+    rule_data = get_rules_with_agents_and_profile_by_rule_id(db, rule_id)
+    if not rule_data['rule']:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    rule = rule_data['rule']
+    results = []
+    
+    # Execute rule for each associated agent
+    for agent in rule.agents:
+        try:
+            # Execute rule immediately
+            result = rule_execution_job(agent.id, rule_id, None)
+            results.append({
+                "agent_id": agent.id,
+                "agent_name": agent.name,
+                "status": "success",
+                "result": result
+            })
+        except Exception as e:
+            results.append({
+                "agent_id": agent.id,
+                "agent_name": agent.name,
+                "status": "error",
+                "error": str(e)
+            })
+    
+    return {
+        "rule_id": rule_id,
+        "rule_name": rule.name,
+        "execution_results": results
+    }
+
 # @router.get("/rule_agents_profiles/{rule_id}")
 # def get_agents_profiles_on_rules(rule_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 #     rule = (db, rule_id)

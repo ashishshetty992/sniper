@@ -215,12 +215,13 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
 
     rule_path = f"C:\ProgramData\\rules\\{filename}"
-    agent_path = "C:\ProgramData\\rules\\yara_scan.py"
+    agent_path = "C:\ProgramData\\rules\\yara_scan_new.py"
     print("remote_path--->", remote_path)
     
     # Run the Python script
     print(f"Executing command: python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
     stdin, stdout, stderr = ssh_client.exec_command(f"python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
+    
     error = stderr.read().decode() 
 
     # if error and error != "":
