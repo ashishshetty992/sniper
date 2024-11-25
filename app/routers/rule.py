@@ -7,7 +7,6 @@ from app.crud.rule import get_rule as crud_get_rule
 from app.crud.rule import get_rules as crud_get_rules
 from app.crud.rule import update_rule as crud_update_rules
 from app.crud.rule import get_rules_with_agents_and_profile_by_rule_id as crud_get_rules_with_agents_and_profile_by_rule_id
-# from app.crud.rule import execute_rule_by_id as execute_rule_by_id
 from app.crud.rule import get_rules_with_agents_and_profile as crud_get_rules_with_agents_and_profile
 from app.crud.analytics import get_analytics_data as get_analytics_data
 from app.schemas.rule import RuleCreate, RuleUpdate
@@ -19,6 +18,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.oauth_user import get_current_user
 from app.routers.user import get_current_user_details
+from app.helpers.ssh_helper import execute_rule_in_remote
 import pdb
 
 router = APIRouter()
@@ -76,11 +76,9 @@ async def scan_rule(
     """
     Immediately execute a rule on all associated agents
     """
-    from app.helpers.jobs import rule_execution_job
-    from app.crud.rule import get_rules_with_agents_and_profile_by_rule_id
-    
     # Get rule and its agents
-    rule_data = get_rules_with_agents_and_profile_by_rule_id(db, rule_id)
+    rule_data = crud_get_rules_with_agents_and_profile_by_rule_id(db, rule_id)
+    print(rule_data)
     if not rule_data['rule']:
         raise HTTPException(status_code=404, detail="Rule not found")
     
@@ -90,14 +88,30 @@ async def scan_rule(
     # Execute rule for each associated agent
     for agent in rule.agents:
         try:
-            # Execute rule immediately
-            result = rule_execution_job(agent.id, rule_id, None)
-            results.append({
-                "agent_id": agent.id,
-                "agent_name": agent.name,
-                "status": "success",
-                "result": result
-            })
+            # Execute rule immediately using ssh_helper
+            result = execute_rule_in_remote(
+                hostname=agent.ip_address,
+                username=agent.agent_name,
+                rule_file=rule.exec_rule
+            )
+            
+            # Process the execution result
+            if isinstance(result, dict) and result.get('status') == 'success':
+                results.append({
+                    "agent_id": agent.id,
+                    "agent_name": agent.name,
+                    "status": "success",
+                    "matches": result.get('matches', []),
+                    "scan_time": result.get('scan_time'),
+                    "files_scanned": result.get('files_scanned')
+                })
+            else:
+                results.append({
+                    "agent_id": agent.id,
+                    "agent_name": agent.name,
+                    "status": "error",
+                    "error": str(result) if result else "Unknown error occurred"
+                })
         except Exception as e:
             results.append({
                 "agent_id": agent.id,

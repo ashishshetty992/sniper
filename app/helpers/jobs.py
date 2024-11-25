@@ -131,6 +131,7 @@ def schedule_rules_for_agent(db:Session, agent_id:int, rules:list[Rule], trigger
     db.commit()
 
 def rule_execution_job(agent_id:int, rule_id:int, schedule_id:int):
+    print(f"running rule for agent id : {agent_id}, rule: {rule_id}")
     db = SessionLocal()
     db_result = None
     agent = get_agent(db, agent_id)
