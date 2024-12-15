@@ -1,5 +1,5 @@
 import pdb
-from fastapi import Depends, FastAPI, HTTPException, dependencies
+from fastapi import Depends, FastAPI, HTTPException, dependencies, BackgroundTasks
 from app.routers import schedule, user, role, oauth, agentprofile, agent, rule, ruleexecutionresult
 from app.database import engine, Base
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ from app.enums import ScheduledStatus
 from datetime import datetime
 from app.crud.role import get_roles
 from app.crud.user import Crud
-from app.seeder import seed_data
+from app.seeder import seed_data, seed_scan_results
 
 from app.schemas.user import UserCreate
 from app.schemas.role import RoleCreate
@@ -47,6 +47,10 @@ app.include_router(rule.router)
 app.include_router(oauth.router)
 app.include_router(schedule.router)
 app.include_router(ruleexecutionresult.router)
+
+@app.on_event("startup")
+async def startup_event():
+    init_scheduler()
 
 def create_default_user_and_role(db=next(get_db())):
     try:
@@ -86,8 +90,7 @@ def create_default_user_and_role(db=next(get_db())):
 Base.metadata.create_all(bind=engine)
 print("SEEDING DATA")
 # seed_data()
-
-init_scheduler()
+# seed_scan_results()
 
 # fetch all scheduled jobs and run it if not executed
 def schedule_jobs(db=next(get_db())):

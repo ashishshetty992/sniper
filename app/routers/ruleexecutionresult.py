@@ -7,8 +7,6 @@ from app.oauth_user import get_current_user
 
 router = APIRouter()
 
-
-
 @router.get("/rule-execution-results")
 def fetch_all_rule_results(skip: int = 0, limit: int = 1000, rule_id:int = None, agent_id:int = None,  schedule_id:int = None, db: Session = Depends(dependencies.get_db)):
     results = get_all_rule_execution_results(db, skip, limit, rule_id, agent_id, schedule_id)

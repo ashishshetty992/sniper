@@ -26,10 +26,16 @@ from app import dependencies
 from app.database import SessionLocal
 import json
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 scheduler = BackgroundScheduler()
 
 def init_scheduler():
+    logger.info("Initializing the scheduler...")
     print("scheduler started")
     scheduler.start()
 
@@ -41,6 +47,8 @@ def ssh_key_generation_job_scheduler(start_date:str, time:list, frequency=None):
     Z (UTC), +HH:MM or -HH:MM.
     """
     
+    logger.info("Scheduling SSH key regeneration job...")
+    logger.info(f"Start Date: {start_date}, Time: {time}, Frequency: {frequency}")
     print("scheduling ssh key regeneration job")
     trigger =  CronTrigger(second="*/15", start_date=start_date)
     if (frequency == "week"):
@@ -87,6 +95,8 @@ def ssh_key_generation_job():
 
 
 def rule_run_scheduler(schedule:Schedule, db:Session):
+    logger.info("Scheduling rule run job...")
+    logger.info(f"Schedule: {schedule}")
     print("scheduling rule run job")
 
     trigger = CronTrigger(hour=schedule.hour, minute=schedule.minutes, start_date=schedule.start_date)

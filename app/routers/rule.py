@@ -20,6 +20,7 @@ from app.oauth_user import get_current_user
 from app.routers.user import get_current_user_details
 from app.helpers.ssh_helper import execute_rule_in_remote
 import pdb
+import asyncio
 
 router = APIRouter()
 
@@ -67,6 +68,39 @@ def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(ge
         raise HTTPException(status_code=404, detail="Analytics Not found")
     return data
 
+async def execute_rule_async(agent, rule):
+    try:
+        # Execute rule immediately using ssh_helper
+        result = await asyncio.to_thread(execute_rule_in_remote,
+                                         hostname=agent.ip_address,
+                                         username=agent.agent_name,
+                                         rule_file=rule.exec_rule)
+
+        # Process the execution result
+        if isinstance(result, dict) and result.get('status') == 'success':
+            return {
+                "agent_id": agent.id,
+                "agent_name": agent.name,
+                "status": "success",
+                "matches": result.get('matches', []),
+                "scan_time": result.get('scan_time'),
+                "files_scanned": result.get('files_scanned')
+            }
+        else:
+            return {
+                "agent_id": agent.id,
+                "agent_name": agent.name,
+                "status": "error",
+                "error": str(result) if result else "Unknown error occurred"
+            }
+    except Exception as e:
+        return {
+            "agent_id": agent.id,
+            "agent_name": agent.name,
+            "status": "error",
+            "error": str(e)
+        }
+
 @router.post("/rules/{rule_id}/scan")
 async def scan_rule(
     rule_id: int,
@@ -83,42 +117,10 @@ async def scan_rule(
         raise HTTPException(status_code=404, detail="Rule not found")
     
     rule = rule_data['rule']
-    results = []
     
-    # Execute rule for each associated agent
-    for agent in rule.agents:
-        try:
-            # Execute rule immediately using ssh_helper
-            result = execute_rule_in_remote(
-                hostname=agent.ip_address,
-                username=agent.agent_name,
-                rule_file=rule.exec_rule
-            )
-            
-            # Process the execution result
-            if isinstance(result, dict) and result.get('status') == 'success':
-                results.append({
-                    "agent_id": agent.id,
-                    "agent_name": agent.name,
-                    "status": "success",
-                    "matches": result.get('matches', []),
-                    "scan_time": result.get('scan_time'),
-                    "files_scanned": result.get('files_scanned')
-                })
-            else:
-                results.append({
-                    "agent_id": agent.id,
-                    "agent_name": agent.name,
-                    "status": "error",
-                    "error": str(result) if result else "Unknown error occurred"
-                })
-        except Exception as e:
-            results.append({
-                "agent_id": agent.id,
-                "agent_name": agent.name,
-                "status": "error",
-                "error": str(e)
-            })
+    # Execute rule for each associated agent concurrently
+    tasks = [execute_rule_async(agent, rule) for agent in rule.agents]
+    results = await asyncio.gather(*tasks)
     
     return {
         "rule_id": rule_id,

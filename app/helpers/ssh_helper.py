@@ -7,6 +7,11 @@ import stat
 import pdb
 import json
 from datetime import datetime
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from app.config import PRIVATE_KEY_FILE_NAME, PRIVATE_KEY_FILE_PATH, PUBLIC_KEY_FILE_NAME, PUBLIC_KEY_FILE_PATH, SSH_DIRECTORY
 
@@ -198,54 +203,30 @@ def generate_ssh_key_pairs():
 
 
 def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
-    print(hostname, username, rule_file, remote_path)
+    logger.info(f"Connecting to agent: {hostname} with username: {username}")
     ssh_client = connect_to_agent(hostname, username)
 
-    print(f"Running rule for the agent")
+    logger.info(f"Running rule for the agent: {hostname}")
 
     # copy the rule in agent
     sftp_client = ssh_client.open_sftp()
     filename = os.path.basename(rule_file)
 
-    # First, copy test_yara_agent.py to the remote machine
-    # agent_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "test_yara_agent.py")
-    # copy_file_content_to_remote_server(sftp_client, agent_script, "test_yara_agent.py", "C:\ProgramData\\rules", "w")
-    
-    # Then copy the rule file
+    logger.info(f"Copying rule file: {rule_file} to remote path: C:\ProgramData\\rules")
     copy_file_content_to_remote_server(sftp_client, rule_file, filename, "C:\ProgramData\\rules", "w")
 
     rule_path = f"C:\ProgramData\\rules\\{filename}"
     agent_path = "C:\ProgramData\\rules\\yara_scan_new.py"
-    print("remote_path--->", remote_path)
-    
-    # Run the Python script
-    print(f"Executing command: python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
+    logger.info(f"Executing command: python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
     stdin, stdout, stderr = ssh_client.exec_command(f"python3 \"{agent_path}\" \"{rule_path}\" \"{remote_path}\"")
-    
-    error = stderr.read().decode() 
 
-    # if error and error != "":
-    #     print("error", error)
-    #     raise Exception(error)
-    
-    # results = []
-    # for line in stdout:
-    #     try:
-    #         result = json.loads(line.strip())
-    #         results.append(result)
-    #     except json.JSONDecodeError as e:
-    #         print(f"Warning: Could not parse line as JSON: {line}")
-    #         continue
-
-    # print("Output:", results)
-    # return results
-    # Process results with enhanced analytics
+    # Read and process each line of output
+    logger.info("Processing command output...")
     scan_results = []
     summary = None
     errors = []
     info_messages = []
     
-    # Read and process each line of output
     for line in stdout:
         try:
             result = json.loads(line.strip())
@@ -258,13 +239,13 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
             else:
                 scan_results.append(result)
         except json.JSONDecodeError:
-            print(f"Warning: Invalid JSON output: {line.strip()}")
+            logger.warning(f"Warning: Invalid JSON output: {line.strip()}")
             continue
 
     # Check for execution errors
     error = stderr.read().decode()
     if error and error != "":
-        print("SSH execution error:", error)
+        logger.error(f"SSH execution error: {error}")
         raise Exception(error)
 
     # Prepare enhanced response
@@ -310,9 +291,10 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
         "timestamp": datetime.now().isoformat()
     }
 
-    print("Response:")
-    print(json.dumps(response, indent=4))
+    logger.info("Response prepared successfully.")
+    logger.debug(json.dumps(response, indent=4))
     return response
+
 
 def main(host_name, user_name, password):
     """Driver function to make connection with remote agents
