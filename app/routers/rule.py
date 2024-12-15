@@ -70,12 +70,15 @@ def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(ge
 
 async def execute_rule_async(agent, rule):
     try:
+        logger.info(f"Executing rule on agent {agent.id} with name {agent.name}")
+        logger.info(f"Rule file: {rule.exec_rule}")
         # Execute rule immediately using ssh_helper
         result = await asyncio.to_thread(execute_rule_in_remote,
                                          hostname=agent.ip_address,
                                          username=agent.agent_name,
                                          rule_file=rule.exec_rule)
 
+        logger.info(f"Execution result: {result}")
         # Process the execution result
         if isinstance(result, dict) and result.get('status') == 'success':
             return {
