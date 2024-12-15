@@ -76,7 +76,8 @@ async def execute_rule_async(agent, rule):
         result = await asyncio.to_thread(execute_rule_in_remote,
                                          hostname=agent.ip_address,
                                          username=agent.agent_name,
-                                         rule_file=rule.exec_rule)
+                                         rule_file=rule.exec_rule,
+                                         remote_path=rule.path)
 
         logger.info(f"Execution result: {result}")
         # Process the execution result
