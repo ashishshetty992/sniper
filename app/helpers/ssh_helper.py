@@ -226,17 +226,17 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     summary = None
     errors = []
     info_messages = []
-    
+
     for line in stdout:
         try:
             result = json.loads(line.strip())
-            if result["status"] == "summary":
+            if result["status"] == "completed":  # Changed from "summary" to "completed"
                 summary = result
             elif result["status"] == "error":
                 errors.append(result)
             elif result["status"] == "info":
                 info_messages.append(result["message"])
-            else:
+            elif result["status"] == "progress":  # Handle progress updates
                 scan_results.append(result)
         except json.JSONDecodeError:
             logger.warning(f"Warning: Invalid JSON output: {line.strip()}")
@@ -248,45 +248,49 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
         logger.error(f"SSH execution error: {error}")
         raise Exception(error)
 
-    # Prepare enhanced response
+    # Prepare enhanced response matching yara_scan_new.py output
     response = {
         "agent_ip": hostname,
         "scan_path": remote_path,
         "rule_path": rule_path,
-        "execution_time": summary["timing"]["total_time_seconds"] if summary else None,
-        "info_messages": info_messages,  
+        "execution_time": summary["scan_stats"]["total_time"] if summary else None,
+        "info_messages": info_messages,
         "stats": {
             "total_files": summary["scan_stats"]["total_files"] if summary else 0,
             "scanned_files": summary["scan_stats"]["scanned_files"] if summary else 0,
             "files_with_matches": summary["scan_stats"]["files_with_matches"] if summary else 0,
             "error_files": summary["scan_stats"]["error_files"] if summary else 0,
-            "success_rate": summary["scan_stats"]["success_rate"] if summary else 0
+            "total_matches": summary["scan_stats"]["total_matches"] if summary else 0,
+            "bytes_scanned": summary["scan_stats"]["bytes_scanned"] if summary else 0
         },
         "performance": {
-            "files_per_second": summary["timing"]["files_per_second"] if summary else 0,
-            "average_scan_time": summary["timing"]["average_scan_time"] if summary else 0,
-            "total_size_scanned": summary["file_stats"]["total_size_bytes"] if summary else 0
+            "files_per_second": summary["scan_stats"]["files_per_second"] if summary else 0,
+            "average_scan_time": summary["scan_stats"]["average_scan_time"] if summary else 0
         },
         "matches": [
             {
                 "file": result["file"],
-                "matches": result["matches"],
-                "scan_time": result["scan_time"],
-                "file_size": result["file_size"]
+                "matches": result["matches"] if "matches" in result else [],
+                "scan_time": result.get("scan_time", 0),
+                "file_size": result.get("file_size", 0)
             }
             for result in scan_results
-            if result["status"] == "success" and result["matches"]
+            if result.get("matches", [])
         ],
         "errors": [
             {
                 "file": error["file"],
                 "error_type": error.get("error_type", "Unknown"),
-                "message": error["message"]
+                "error": error.get("error", "Unknown error")  # Changed from "message" to "error"
             }
             for error in errors
         ],
-        "rule_analysis": summary["rule_matches"]["matches_by_rule"] if summary else {},
-        "file_types": summary["file_stats"]["file_types"] if summary else {},
+        "file_analysis": {
+            "file_types": summary["scan_stats"]["file_types"] if summary else {},
+            "largest_file": summary["scan_stats"]["largest_file"] if summary else {},
+            "smallest_file": summary["scan_stats"]["smallest_file"] if summary else {}
+        },
+        "rule_analysis": summary["scan_stats"]["matches_by_rule"] if summary else {},
         "status": "success" if not errors else "partial_success" if scan_results else "failed",
         "timestamp": datetime.now().isoformat()
     }
@@ -294,7 +298,6 @@ def execute_rule_in_remote(hostname, username, rule_file, remote_path="C:"):
     logger.info("Response prepared successfully.")
     logger.debug(json.dumps(response, indent=4))
     return response
-
 
 def main(host_name, user_name, password):
     """Driver function to make connection with remote agents

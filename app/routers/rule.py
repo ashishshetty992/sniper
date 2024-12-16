@@ -90,6 +90,15 @@ async def execute_rule_async(agent, rule):
                 "scan_time": result.get('scan_time'),
                 "files_scanned": result.get('files_scanned')
             }
+        elif isinstance(result, dict) and result.get('status') == 'summary':
+            return {
+                "agent_id": agent.id,
+                "agent_name": agent.name,
+                "status": "success",
+                "matches": result.get('matches', []),
+                "scan_time": result.get('scan_time'),
+                "files_scanned": result.get('files_scanned')
+            }
         else:
             return {
                 "agent_id": agent.id,
