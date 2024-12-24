@@ -19,6 +19,7 @@ from app.models.role import Role
 from app.oauth_user import get_current_user
 from app.routers.user import get_current_user_details
 from app.helpers.ssh_helper import execute_rule_in_remote
+from app.models.rule_execution_result import RuleExecutionResult
 import pdb
 import asyncio
 
@@ -68,11 +69,10 @@ def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(ge
         raise HTTPException(status_code=404, detail="Analytics Not found")
     return data
 
-async def execute_rule_async(agent, rule):
+async def execute_rule_async(agent, rule, db: Session):
     try:
         logger.info(f"Executing rule on agent {agent.id} with name {agent.name}")
         logger.info(f"Rule file: {rule.exec_rule}")
-        # Execute rule immediately using ssh_helper
         result = await asyncio.to_thread(execute_rule_in_remote,
                                          hostname=agent.ip_address,
                                          username=agent.agent_name,
@@ -81,17 +81,18 @@ async def execute_rule_async(agent, rule):
 
         logger.info(f"Execution result: {result}")
         # Process the execution result
+        execution_result = None
         if isinstance(result, dict) and result.get('status') == 'success':
-            return {
+            execution_result = {
                 "agent_id": agent.id,
                 "agent_name": agent.name,
-                "status": "success",
+                "status": "success", 
                 "matches": result.get('matches', []),
                 "scan_time": result.get('scan_time'),
                 "files_scanned": result.get('files_scanned')
             }
         elif isinstance(result, dict) and result.get('status') == 'summary':
-            return {
+            execution_result = {
                 "agent_id": agent.id,
                 "agent_name": agent.name,
                 "status": "success",
@@ -100,19 +101,50 @@ async def execute_rule_async(agent, rule):
                 "files_scanned": result.get('files_scanned')
             }
         else:
-            return {
+            execution_result = {
                 "agent_id": agent.id,
                 "agent_name": agent.name,
                 "status": "error",
                 "error": str(result) if result else "Unknown error occurred"
             }
+
+        # Save execution result to database
+        rule_execution = RuleExecutionResult(
+            file_name=rule.exec_rule,
+            scanned_file=rule.path,
+            rule_name=rule.name,
+            severity="info",
+            details=json.dumps(execution_result),
+            latency=execution_result.get("scan_time", 0),
+            status=execution_result["status"]
+        )
+        rule_execution.agent.append(agent)
+        rule_execution.rule.append(rule)
+        db.add(rule_execution)
+        db.commit()
+        db.refresh(rule_execution)
+        
+        return execution_result
+
     except Exception as e:
-        return {
+        error_result = {
             "agent_id": agent.id,
             "agent_name": agent.name,
             "status": "error",
             "error": str(e)
         }
+        
+        # Save error result to database
+        rule_execution = RuleExecutionResult(
+            rule_id=rule.id,
+            agent_id=agent.id,
+            status="error",
+            error=str(e)
+        )
+        db.add(rule_execution)
+        db.commit()
+        
+        return error_result
 
 @router.post("/rules/{rule_id}/scan")
 async def scan_rule(
